@@ -1,0 +1,38 @@
+services:
+  frontend:
+    image: nginx:alpine
+    container_name: hw-frontend
+    ports:
+      - "8081:80"
+    volumes:
+      - ./frontend/index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - frontend-net
+    depends_on:
+      - backend
+
+  backend:
+    image: alpine:3.20
+    container_name: hw-backend
+    command: sleep infinity
+    networks:
+      - frontend-net
+      - backend-net
+
+  database:
+    image: mysql:8.0
+    container_name: hw-database
+    environment:
+      MYSQL_ROOT_PASSWORD: homeworkpass
+      MYSQL_DATABASE: appdb
+    networks:
+      - backend-net
+      - db-net
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+  db-net:
+    driver: bridge

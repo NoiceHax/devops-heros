@@ -1,0 +1,23 @@
+DevOps Homework.pdf
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+
+# AI and local agent artifacts
+.cursor/
+.claude/
+.git-rewrite/
+AGENTS.md
+**/agent-transcripts/
+tools/
+image.png
+
+session3-shell-scripting/sysinfo_output/
+session2-linux/screenshots/*.txt
+session4-networking/screenshots/*.txt
+session5-git-github/screenshots/*.txt
+session5-git-github/_demo/
+session5-git-github/run-demo.sh
+session7-docker-multistage/screenshots/*.txt
+session8-docker-networking/screenshots/*.txt
