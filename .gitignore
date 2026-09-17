@@ -21,3 +21,10 @@ session5-git-github/_demo/
 session5-git-github/run-demo.sh
 session7-docker-multistage/screenshots/*.txt
 session8-docker-networking/screenshots/*.txt
+session9-k8s/screenshots/*.txt
+session10-k8s-core-objects/screenshots/*.txt
+session-11-kubernetes-services/screenshots/*.txt
+session-12-ingress-configmaps-secrets/screenshots/*.txt
+
+# personal study notes, not part of the submission
+doc/

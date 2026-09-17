@@ -1,0 +1,17 @@
+# Written by hand, not copied. The four fields every Kubernetes object needs:
+#   apiVersion - which API group and version validates this object
+#   kind       - what type of object it is
+#   metadata   - the name and labels used to find it later
+#   spec       - what I actually want to exist
+apiVersion: v1          # Pod is in the core group, so just v1 (no group name)
+kind: Pod
+metadata:
+  name: my-first-pod
+  labels:
+    app: my-first-pod   # a Service would use this label to find the pod
+spec:
+  containers:
+    - name: web
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
