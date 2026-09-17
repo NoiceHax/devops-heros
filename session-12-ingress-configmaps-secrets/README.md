@@ -1,0 +1,9 @@
+Ingress, ConfigMaps and Secrets homework. Ran on minty@homelab with minikube and the nginx ingress addon. Screenshots are in the screenshots folder.
+
+03-ingress-vs-controller.png is the ingress object next to the controller pod. The Ingress is only rules, inert YAML that routes nothing by itself. The Ingress Controller is a running nginx pod that watches those rules and rewrites its own config. Apply an Ingress with no controller and traffic goes nowhere. Ingress also saves paying for one LoadBalancer per service, and is where TLS is terminated.
+
+01-full-demo.png is run-demo.sh: it enables the addon, applies the ConfigMap and Secret, deploys frontend and backend with ClusterIP services, applies the Ingress, then curls both paths. Path / hits the frontend and /api/ hits the backend. Step 9 adds yatri.local to /etc/hosts and needs sudo, which is interactive here, so I verified with curl -H "Host: yatri.local" instead, which sends the same header a browser would. The files also needed CRLF converted to LF because they came from a Windows checkout.
+
+The backend rule is /api(/|$)(.*) with rewrite-target /$2, so the /api prefix is stripped before forwarding and the backend sees /. Forgetting that rewrite is the most common Ingress mistake.
+
+02-configmap-secret.png is the injected env inside the backend pod, then the Secret read back. A ConfigMap holds non-sensitive per-environment config so the same image and YAML move from dev to production unchanged. A Secret is the same shape for passwords and tokens. base64 is encoding, not encryption, and the screenshot decodes the password in one command, so RBAC and encryption at rest on etcd are the real protection. The last line shows the newline bug: echo "pass" | base64 gives cGFzcwo= and echo -n gives cGFzcw==, so without -n the app gets pass\n and auth fails.
