@@ -1,4 +1,4 @@
-name: Hello GitHub Actions
+name: Session 16-03 Hello GitHub Actions
 
 on:
   workflow_dispatch:
@@ -6,6 +6,13 @@ on:
     branches:
       - main
       - 'feature/*'
+    paths:
+      - 'session-16-github-actions/session-16-github-actions/03-github-actions/**'
+      - '.github/workflows/session16-03-hello-actions.yml'
+
+defaults:
+  run:
+    working-directory: session-16-github-actions/session-16-github-actions/03-github-actions
 
 jobs:
   hello:
@@ -29,3 +36,5 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run tests
         run: python -m pytest tests/ -v
+      - name: Run calculator
+        run: printf '10 + 5\n100 / 4\n1 / 0\nq\n' | python -m app.calculator
