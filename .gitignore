@@ -28,3 +28,4 @@ session-12-ingress-configmaps-secrets/screenshots/*.txt
 
 # personal study notes, not part of the submission
 doc/
+.zip
