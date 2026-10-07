@@ -147,6 +147,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: kind   # kind load below looks for this name (the action defaults to chart-testing)
       - name: Pull the scanned image and load it into the cluster
         run: |
           REPO="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME"

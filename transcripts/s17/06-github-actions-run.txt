@@ -1,7 +1,13 @@
 === Session 17 / DevSecOps pipeline on GitHub Actions (NoiceHax/devsecops-demo, private repo) ===
-captured 2026-10-07 23:41 IST, run 37664207982 (commit 7805adb)
+captured 2026-10-07 23:50 IST
 
-$ gh run view 37664207982 --json jobs   # job / conclusion
+# Run 1 (run 37664207982, commit 7805adb): 8 of 9 jobs passed; "Deploy to Kubernetes (kind)" FAILED
+  error:  ERROR: no nodes found for cluster "kind"        (at the `kind load docker-image` step)
+  cause:  helm/kind-action names its cluster "chart-testing" by default, but `kind load` looks for "kind"
+  fix:    pass `cluster_name: kind` to the action (commit b8edda0)
+
+# Run 2 (run 37665131643, commit b8edda0): ALL 9 PASSED
+$ gh run view 37665131643 --json jobs   # job / conclusion
   Build and Unit Test: success
   SAST (CodeQL + Bandit): success
   SCA (pip-audit): success
@@ -10,8 +16,6 @@ $ gh run view 37664207982 --json jobs   # job / conclusion
   Image Scan (Trivy): success
   Security Gate: success
   Push Image to GHCR: success
-  Deploy to Kubernetes (kind): failure
+  Deploy to Kubernetes (kind): success
 
-# 8 of 9 jobs passed: every scan, the gate and the image push. The deploy job (kind cluster inside the runner) failed.
-# I did NOT read its log: the log fetch was blocked in this session, so the root cause is unknown.
 # CodeQL is skipped on private repos (`if: !github.event.repository.private`); Bandit is the SAST gate there.

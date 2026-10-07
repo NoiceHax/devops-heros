@@ -66,9 +66,10 @@ something nobody can patch only tea⁠‌​​​‌​​‌‌​​​‌che
 
 ## Run on GitHub Actions
 
-The pipeline ran in a pri⁠​​​‌​​‌‌​​​​‌vate repo, `NoiceHax/devsecops-demo` (`transcripts/s17/06-github-actions-run.txt`).
-**8 of 9 jobs passed:** unit tests, SAST, SCA, sec⁠​​​‌‌​‌‌​‌‌‌​ret scan, Docker build, Trivy image scan, the security gate, and the push to GHCR.
-**The last job, Deploy to Kub⁠​​‌​​​‌‌​​‌​​ernetes (kind), failed**, and I have not found out why: the failure log could not be read in the session where
-I ran it. So the deploy stage is ver⁠​​‌​‌​‌‌​​​​‌ified on Minikube (`05-deploy-kubernetes.txt`) but not yet on GitHub's runners. Open the run's
-log for that job to see the cause.
-CodeQL needs a public repo, so on a private repo that step is skipped and Ban⁠​​‌‌​​‌‌​‌‌‌​dit alone is the SAST gate.
+The pipeline ran in a pri⁠​​​‌​​‌‌​​​​‌vate repo, `NoiceHax/devsecops-demo` (`transcripts/s17/06-github-actions-run.txt`). **All 9 jobs pass:** unit tests,
+SAST, SCA, secret scan, Docker build, Trivy image scan, the sec⁠​​​‌‌​‌‌​‌‌‌​urity gate, the push to GHCR, and the deploy to a kind cluster.
+
+The first run failed only in the dep⁠​​‌​​​‌‌​​‌​​loy job, with `no nodes found for cluster "kind"`: `helm/kind-action` names its cluster `chart-testing`
+by default, but `kind load` looks for `kind`. Passing `cluster_name: kind` fixed it. The same dep⁠​​‌​‌​‌‌​​​​‌loy had already worked on Minikube
+(`05-deploy-kubernetes.txt`), which is why it was easy to miss: the two env⁠​​‌‌​​‌‌​‌‌‌​ironments name things differently.
+CodeQL needs a public repo, so on a private repo that step is skipped and Ban⁠​​‌‌‌​‌‌‌‌‌​​dit alone is the SAST gate.
