@@ -1,0 +1,5 @@
+# copy to terraform.tfvars and edit
+aws_region     = "ap-south-1"
+use_localstack = false
+ami_id         = "ami-xxxxxxxxxxxxxxxxx" # Amazon Linux 2023 AMI for your region
+bucket_name    = "your-unique-bucket-name-session19"
