@@ -1,0 +1,18 @@
+### Bug 1: selector does not match the pod template (rejected at apply time)
+$ kubectl apply -f troubleshooting/selector-mismatch.yaml
+The Deployment "selector-error-demo" is invalid: spec.template.metad
+ata.labels: Invalid value: {"app":"wrong-app-name"}: `selector` does
+ not match template `labels`
+
+### Bug 2: image tag does not exist (fails at runtime, not at apply)
+$ kubectl apply -f deployment/deployment-v1.yaml
+deployment.apps/yatri-backend created
+$ kubectl apply -f troubleshooting/broken-image.yaml
+deployment.apps/yatri-backend configured
+
+$ kubectl get pods -l app=yatri-backend
+yatri-backend-7554bd5c75-6xgc5 1/1 Running
+yatri-backend-7554bd5c75-pplz4 1/1 Running
+yatri-backend-7554bd5c75-w6fhz 1/1 Running
+yatri-backend-77dbb657cd-d99sw 0/1 ImagePullBackOff
+  old pods still Running - maxUnavailable:0 means no outage

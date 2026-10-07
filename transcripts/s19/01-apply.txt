@@ -1,0 +1,96 @@
+=== Session 19 / VPC + Subnet + SG + EC2 + S3 with Terraform (LocalStack 4.9.2) ===
+minty@homelab, terraform v1.16.4, captured 2026-10-07 22:01 IST
+
+$ terraform fmt -check -recursive   (no output = formatted)
+
+$ terraform init -plugin-dir=<local provider mirror>
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+$ terraform validate
+Success! The configuration is valid.
+
+
+$ terraform plan -var-file=localstack.tfvars -out=tfplan
+  # aws_instance.web will be created
+  # aws_internet_gateway.main will be created
+  # aws_route_table.public will be created
+  # aws_route_table_association.public will be created
+  # aws_s3_bucket.assets will be created
+  # aws_s3_bucket_public_access_block.assets will be created
+  # aws_s3_bucket_versioning.assets will be created
+  # aws_security_group.web will be created
+  # aws_subnet.public will be created
+  # aws_vpc.main will be created
+Plan: 10 to add, 0 to change, 0 to destroy.
+Changes to Outputs:
+
+$ terraform apply tfplan
+aws_vpc.main: Creating...
+aws_s3_bucket.assets: Creating...
+aws_vpc.main: Creation complete after 0s [id=vpc-4080b03332779aeac]
+aws_s3_bucket.assets: Creation complete after 0s [id=session19-assets-demo]
+aws_subnet.public: Creating...
+aws_internet_gateway.main: Creating...
+aws_s3_bucket_public_access_block.assets: Creating...
+aws_s3_bucket_versioning.assets: Creating...
+aws_security_group.web: Creating...
+aws_s3_bucket_public_access_block.assets: Creation complete after 1s [id=session19-assets-demo]
+aws_internet_gateway.main: Creation complete after 1s [id=igw-6361d2244059a4d05]
+aws_route_table.public: Creating...
+aws_security_group.web: Creation complete after 1s [id=sg-6372f55198b926c48]
+aws_route_table.public: Creation complete after 0s [id=rtb-828f5bcca5546c48c]
+aws_s3_bucket_versioning.assets: Creation complete after 2s [id=session19-assets-demo]
+aws_subnet.public: Creation complete after 11s [id=subnet-09f0ac7b010395956]
+aws_route_table_association.public: Creating...
+aws_instance.web: Creating...
+aws_route_table_association.public: Creation complete after 0s [id=rtbassoc-27a3fba2d6d4172f6]
+aws_instance.web: Creation complete after 10s [id=i-f7602e6e5ff55836c]
+Apply complete! Resources: 10 added, 0 changed, 0 destroyed.
+Outputs:
+bucket_name = "session19-assets-demo"
+instance_id = "i-f7602e6e5ff55836c"
+instance_private_ip = "10.20.1.4"
+public_subnet_id = "subnet-09f0ac7b010395956"
+security_group_id = "sg-6372f55198b926c48"
+vpc_id = "vpc-4080b03332779aeac"
+
+$ terraform state list
+aws_instance.web
+aws_internet_gateway.main
+aws_route_table.public
+aws_route_table_association.public
+aws_s3_bucket.assets
+aws_s3_bucket_public_access_block.assets
+aws_s3_bucket_versioning.assets
+aws_security_group.web
+aws_subnet.public
+aws_vpc.main
+
+$ terraform output
+bucket_name = "session19-assets-demo"
+instance_id = "i-f7602e6e5ff55836c"
+instance_private_ip = "10.20.1.4"
+public_subnet_id = "subnet-09f0ac7b010395956"
+security_group_id = "sg-6372f55198b926c48"
+vpc_id = "vpc-4080b03332779aeac"
+
+$ terraform graph | grep -E "\->"   # dependency edges Terraform worked out
+  aws_instance.web -> aws_internet_gateway.main;
+  aws_instance.web -> aws_security_group.web;
+  aws_instance.web -> aws_subnet.public;
+  aws_internet_gateway.main -> aws_vpc.main;
+  aws_route_table_association.public -> aws_route_table.public;
+  aws_route_table_association.public -> aws_subnet.public;
+  aws_route_table.public -> aws_internet_gateway.main;
+  aws_s3_bucket_public_access_block.assets -> aws_s3_bucket.assets;
+  aws_s3_bucket_versioning.assets -> aws_s3_bucket.assets;
+  aws_security_group.web -> aws_vpc.main;
+  aws_subnet.public -> aws_vpc.main;
+

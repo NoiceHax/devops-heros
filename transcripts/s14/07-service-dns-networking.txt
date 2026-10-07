@@ -1,0 +1,128 @@
+=== Session 14 / Issue: Service connectivity + Pod networking + DNS ===
+minty@homelab, minikube, captured 2026-10-07 21:22 IST
+
+$ kubectl apply -f 12-pod-networking/web.yaml -f 12-pod-networking/client.yaml -f 12-pod-networking/service-wrong-port.yaml
+pod/web created
+pod/client created
+service/web-svc created
+
+$ kubectl wait --for=condition=Ready pod/web pod/client --timeout=90s
+pod/web condition met
+pod/client condition met
+
+$ kubectl get pods -o wide
+NAME          READY   STATUS        RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+client        1/1     Running       0          4s    10.244.0.53   minikube   <none>           <none>
+config-demo   1/1     Terminating   0          9s    10.244.0.51   minikube   <none>           <none>
+web           1/1     Running       0          4s    10.244.0.52   minikube   <none>           <none>
+
+$ kubectl get svc,endpoints web-svc
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/web-svc   ClusterIP   10.108.219.86   <none>        80/TCP    4s
+
+NAME                ENDPOINTS          AGE
+endpoints/web-svc   10.244.0.52:8080   3s
+
+$ kubectl exec client -- wget -qO- -T 3 http://web-svc
+wget: can't connect to remote host (10.108.219.86): Connection refused
+command terminated with exit code 1
+
+# SYMPTOM: Service resolves but the connection is refused. Endpoints exist, so selector is fine -> check ports.
+
+$ kubectl describe svc web-svc | grep -E 'Selector|Port|TargetPort|Endpoints'
+Selector:                 app=web
+Port:                     <unset>  80/TCP
+TargetPort:               8080/TCP
+Endpoints:                10.244.0.52:8080
+
+$ kubectl exec client -- wget -qO- -T 3 http://$(kubectl get pod web -o jsonpath={.status.podIP}):80 | head -4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+
+# Direct Pod IP on :80 works, so the Pod is healthy. ROOT CAUSE: Service targetPort 8080 but nginx listens on 80.
+
+$ kubectl apply -f 12-pod-networking/service-fixed.yaml
+service/web-svc configured
+
+$ kubectl exec client -- wget -qO- -T 3 http://web-svc | head -4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+
+--- DNS checks ---
+
+$ kubectl exec client -- nslookup web-svc
+Server:		10.96.0.10
+Address:	10.96.0.10:53
+
+** server can't find web-svc.svc.cluster.local: NXDOMAIN
+
+** server can't find web-svc.cluster.local: NXDOMAIN
+
+
+** server can't find web-svc.svc.cluster.local: NXDOMAIN
+
+** server can't find web-svc.cluster.local: NXDOMAIN
+
+Name:	web-svc.s14.svc.cluster.local
+Address: 10.108.219.86
+
+** server can't find web-svc.tail3ed9c7.ts.net: NXDOMAIN
+
+** server can't find web-svc.tail3ed9c7.ts.net: NXDOMAIN
+
+command terminated with exit code 1
+
+$ kubectl exec client -- nslookup web-svc.s14.svc.cluster.local
+Server:		10.96.0.10
+Address:	10.96.0.10:53
+
+
+Name:	web-svc.s14.svc.cluster.local
+Address: 10.108.219.86
+
+
+$ kubectl exec client -- nslookup does-not-exist
+Server:		10.96.0.10
+Address:	10.96.0.10:53
+
+** server can't find does-not-exist.s14.svc.cluster.local: NXDOMAIN
+
+** server can't find does-not-exist.svc.cluster.local: NXDOMAIN
+
+** server can't find does-not-exist.s14.svc.cluster.local: NXDOMAIN
+
+** server can't find does-not-exist.svc.cluster.local: NXDOMAIN
+
+** server can't find does-not-exist.cluster.local: NXDOMAIN
+
+** server can't find does-not-exist.cluster.local: NXDOMAIN
+
+** server can't find does-not-exist.tail3ed9c7.ts.net: NXDOMAIN
+
+** server can't find does-not-exist.tail3ed9c7.ts.net: NXDOMAIN
+
+command terminated with exit code 1
+
+$ kubectl exec client -- cat /etc/resolv.conf
+search s14.svc.cluster.local svc.cluster.local cluster.local tail3ed9c7.ts.net
+nameserver 10.96.0.10
+options ndots:5
+
+$ kubectl get pods -n kube-system -l k8s-app=kube-dns
+NAME                       READY   STATUS    RESTARTS      AGE
+coredns-559f6c778d-nzd6m   1/1     Running   2 (20m ago)   20d
+
+$ kubectl logs -n kube-system -l k8s-app=kube-dns --tail=5
+[INFO] 10.244.0.53:54562 - 11996 "AAAA IN does-not-exist.svc.cluster.local. udp 50 false 512" NXDOMAIN qr,aa,rd 143 0.000128471s
+[INFO] 10.244.0.53:54562 - 43979 "AAAA IN does-not-exist.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.000082494s
+[INFO] 10.244.0.53:54562 - 23067 "A IN does-not-exist.cluster.local. udp 46 false 512" NXDOMAIN qr,aa,rd 139 0.000091198s
+[INFO] 10.244.0.53:54562 - 19143 "AAAA IN does-not-exist.tail3ed9c7.ts.net. udp 50 false 512" NXDOMAIN qr,rd,ra 137 0.00139832s
+[INFO] 10.244.0.53:54562 - 34288 "A IN does-not-exist.tail3ed9c7.ts.net. udp 50 false 512" NXDOMAIN qr,rd,ra 137 0.001009896s
+
+# NXDOMAIN for does-not-exist = typo in the Service name, not a CoreDNS fault (CoreDNS pods Running, other names resolve).
+

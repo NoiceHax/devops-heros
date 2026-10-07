@@ -1,0 +1,14 @@
+$ kubectl apply -f hello.yml   # busybox runs one echo, then exits
+pod/hello-pod created
+
+$ for i in 1..14; do kubectl get pod hello-pod; sleep 1; done
+  hello-pod   Pending
+  hello-pod   ContainerCreating
+  hello-pod   Running
+  hello-pod   Completed
+
+$ kubectl logs hello-pod
+Hello Kubernetes
+
+  restartPolicy: Never is what lets it settle on Completed.
+  nginx never reaches Completed because it never exits.

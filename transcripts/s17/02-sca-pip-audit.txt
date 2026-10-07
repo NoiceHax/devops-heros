@@ -1,0 +1,6 @@
+=== Session 17 / SCA (pip-audit on requirements.txt) ===
+minty@homelab, captured 2026-10-07 21:36 IST
+
+$ pip-audit -r requirements.txt
+No known vulnerabilities found
+exit=0

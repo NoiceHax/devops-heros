@@ -1,0 +1,77 @@
+=== Session 13 / Module 04: HPA under load ===
+minty@homelab, minikube v1.39.0, captured 2026-10-07 21:09 IST
+
+$ kubectl apply -f 04-hpa/deployment.yaml -f 04-hpa/service.yaml -f 04-hpa/hpa.yaml
+deployment.apps/hpa-demo created
+service/hpa-demo-service created
+horizontalpodautoscaler.autoscaling/hpa-demo created
+
+$ kubectl rollout status deploy/hpa-demo --timeout=90s
+Waiting for deployment "hpa-demo" rollout to finish: 0 of 1 updated replicas are available...
+deployment "hpa-demo" successfully rolled out
+
+$ kubectl get hpa hpa-demo
+NAME       REFERENCE             TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
+hpa-demo   Deployment/hpa-demo   cpu: <unknown>/50%   1         5         1          49s
+
+# BEFORE load: idle, 1 replica
+
+pod/load-generator created
+$ kubectl apply -f 04-hpa/load-generator.yaml   # 2 parallel wget loops (reduced for the 4-core laptop)
+
+--- t+20s
+hpa-demo   Deployment/hpa-demo   cpu: 7%/50%   1     5     1     69s
+hpa-demo-5d6676989b-lfdvk   7m    4Mi   
+--- t+40s
+hpa-demo   Deployment/hpa-demo   cpu: 7%/50%   1     5     1     89s
+hpa-demo-5d6676989b-lfdvk   7m    4Mi   
+--- t+60s
+hpa-demo   Deployment/hpa-demo   cpu: 7%/50%   1     5     1     110s
+hpa-demo-5d6676989b-lfdvk   7m    4Mi   
+--- t+80s
+hpa-demo   Deployment/hpa-demo   cpu: 105%/50%   1     5     1     2m10s
+hpa-demo-5d6676989b-lfdvk   105m   7Mi   
+--- t+100s
+hpa-demo   Deployment/hpa-demo   cpu: 105%/50%   1     5     3     2m30s
+hpa-demo-5d6676989b-lfdvk   105m   7Mi   
+--- t+120s
+hpa-demo   Deployment/hpa-demo   cpu: 105%/50%   1     5     3     2m50s
+hpa-demo-5d6676989b-lfdvk   105m   7Mi   
+--- t+140s
+hpa-demo   Deployment/hpa-demo   cpu: 79%/50%   1     5     3     3m11s
+hpa-demo-5d6676989b-9d6gj   41m   5Mi   
+hpa-demo-5d6676989b-g2rtd   48m   4Mi   
+hpa-demo-5d6676989b-lfdvk   79m   6Mi   
+--- t+160s
+hpa-demo   Deployment/hpa-demo   cpu: 79%/50%   1     5     3     3m31s
+hpa-demo-5d6676989b-9d6gj   41m   5Mi   
+hpa-demo-5d6676989b-g2rtd   48m   4Mi   
+hpa-demo-5d6676989b-lfdvk   79m   6Mi   
+
+$ kubectl get pods -l app=hpa-demo
+NAME                        READY   STATUS    RESTARTS   AGE
+hpa-demo-5d6676989b-9d6gj   1/1     Running   0          90s
+hpa-demo-5d6676989b-g2rtd   1/1     Running   0          90s
+hpa-demo-5d6676989b-lfdvk   1/1     Running   0          3m31s
+
+$ kubectl describe hpa hpa-demo | sed -n '/Metrics:/,$p'
+Metrics:                                               ( current / target )
+  resource cpu on pods  (as a percentage of request):  79% (79m) / 50%
+Min replicas:                                          1
+Max replicas:                                          5
+Deployment pods:                                       3 current / 3 desired
+Conditions:
+  Type            Status  Reason              Message
+  ----            ------  ------              -------
+  AbleToScale     True    ReadyForNewScale    recommended size matches current size
+  ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
+  ScaledToZero    False   NotScaledToZero     the HPA controller did not scale the workload to zero
+Events:
+  Type     Reason                        Age                    From                       Message
+  ----     ------                        ----                   ----                       -------
+  Warning  FailedGetResourceMetric       2m45s (x4 over 3m31s)  horizontal-pod-autoscaler  failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+  Warning  FailedComputeMetricsReplicas  2m45s (x4 over 3m30s)  horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+  Normal   SuccessfulRescale             90s                    horizontal-pod-autoscaler  New size: 3; reason: cpu resource utilization (percentage of request) above target
+
+# load generator deleted; HPA scales back down after the 5 minute stabilization window

@@ -1,0 +1,24 @@
+=== Session 20 / Alert demo: stop the app, watch the alert fire, restore ===
+minty@homelab, captured 2026-10-07 22:10 IST
+
+## 1. Healthy baseline
+  probe_success = 1
+  active alerts: none
+
+$ docker stop s20-app        # simulate an outage
+
+## 2. ~8s later: probe fails, alert is PENDING (rule has "for: 10s")
+  probe_success = 0
+  active alerts: [('AppDown', 'pending')]
+
+## 3. ~20s later: FIRING
+  probe_success = 0
+  active alerts: [('AppDown', 'firing')]
+
+   AppDown critical | http://app:80 is failing its HTTP health probe | since 2026-10-07T16:40:41
+
+$ docker start s20-app       # fix it
+
+## 4. ~12s later: recovered, alert resolved
+  probe_success = 1
+  active alerts: none

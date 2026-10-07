@@ -1,0 +1,28 @@
+=== Session 14 / Issue: ContainerCreating (missing ConfigMap volume) ===
+minty@homelab, minikube, captured 2026-10-07 21:20 IST
+
+$ kubectl apply -f 10-containercreating/broken-pod.yaml
+pod/creating-demo created
+
+$ kubectl get pod creating-demo
+NAME            READY   STATUS              RESTARTS   AGE
+creating-demo   0/1     ContainerCreating   0          16s
+
+$ kubectl describe pod creating-demo | sed -n '/Events:/,$p'
+Events:
+  Type     Reason       Age               From               Message
+  ----     ------       ----              ----               -------
+  Normal   Scheduled    16s               default-scheduler  Successfully assigned s14/creating-demo to minikube
+  Warning  FailedMount  8s (x5 over 15s)  kubelet            MountVolume.SetUp failed for volume "cfg" : configmap "app-settings" not found
+
+# ROOT CAUSE: the Pod mounts ConfigMap 'app-settings' which does not exist, so the kubelet cannot finish creating the sandbox volume.
+
+$ kubectl apply -f 10-containercreating/fix-configmap.yaml
+configmap/app-settings created
+
+$ kubectl get pod creating-demo
+NAME            READY   STATUS    RESTARTS   AGE
+creating-demo   1/1     Running   0          86s
+
+$ kubectl exec creating-demo -- cat /etc/app/mode
+production

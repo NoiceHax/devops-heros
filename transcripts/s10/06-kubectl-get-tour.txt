@@ -1,0 +1,29 @@
+$ kubectl get nodes
+minikube   Ready   control-plane   21m   v1.37.0
+
+$ kubectl get ns
+default Active
+ingress-nginx Active
+kube-node-lease Active
+kube-public Active
+kube-system Active
+
+$ kubectl cluster-info
+Kubernetes control plane is running at https://192.168.49.2:8443
+CoreDNS is running at https://192.168.49.2:8443/api/v1/namespaces/ku
+
+$ kubectl get pods -n kube-system
+coredns-559f6c778d-nzd6m Running
+etcd-minikube Running
+kindnet-mlqfh Running
+kube-apiserver-minikube Running
+kube-controller-manager-minikube Running
+kube-proxy-plbfj Running
+kube-scheduler-minikube Running
+storage-provisioner Running
+
+$ kubectl get events --sort-by=.lastTimestamp | tail -4
+Normal Pulled pod/lifecycle-liveness
+Warning BackOff pod/lifecycle-crashloop
+Normal Created pod/lifecycle-liveness
+Normal Started pod/lifecycle-liveness

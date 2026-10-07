@@ -1,0 +1,23 @@
+$ kubectl get rs -l app=app-rolling    # old RS kept at 0, this is how undo works
+app-rolling-56bff6d88c   4     4
+app-rolling-86d7d44d5b   0     <none>
+
+$ kubectl rollout undo deployment/app-rolling
+Warning: resource deployments/app-rolling was previously managed with 
+deployment.apps/app-rolling rolled back
+deployment "app-rolling" successfully rolled out
+
+$ kubectl get pods -l app=app-rolling -o custom-columns=NAME,VERSION   # back on v1
+app-rolling-56bff6d88c-xg6r4   v2
+app-rolling-86d7d44d5b-2225w   v1
+app-rolling-86d7d44d5b-2swn9   v1
+app-rolling-86d7d44d5b-bqxnf   v1
+app-rolling-86d7d44d5b-tsc95   v1
+
+$ kubectl rollout history deployment/app-rolling
+deployment.apps/app-rolling 
+REVISION  CHANGE-CAUSE
+2         <none>
+3         <none>
+
+  (revision 2 is gone, the rollback became revision 3)

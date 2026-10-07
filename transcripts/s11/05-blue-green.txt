@@ -1,0 +1,24 @@
+$ kubectl apply -f 02-blue-green/deployment-blue.yaml -f 02-blue-green/service-blue.yaml
+deployment.apps/app-blue created
+service/myapp-service created
+
+$ curl -s 192.168.49.2:30020 | grep -o "Version: v[0-9]"
+Version: v1
+
+$ kubectl apply -f 02-blue-green/deployment-green.yaml    # green runs alongside
+deployment.apps/app-green created
+$ kubectl get pods -l app=myapp --show-labels | cut -c1-84
+app-blue-5c69d7785c-7ggj7   Running   blue
+app-blue-5c69d7785c-jt6sv   Running   blue
+app-blue-5c69d7785c-zkkh5   Running   blue
+app-green-84df7f978-6nhlr   Running   green
+app-green-84df7f978-9fpsp   Running   green
+app-green-84df7f978-dc6vj   Running   green
+
+$ kubectl apply -f 02-blue-green/service-green.yaml        # THE SWITCH
+service/myapp-service configured
+$ kubectl describe svc myapp-service | grep Selector
+Selector:                 app=myapp,slot=green
+
+$ curl -s 192.168.49.2:30020 | grep -o "Version: v[0-9]"   # traffic moved, no restart
+Version: v2

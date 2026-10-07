@@ -1,0 +1,28 @@
+$ kubectl apply -f 01-rolling-update/deployment-v1.yaml -f 01-rolling-update/service.yaml
+deployment.apps/app-rolling created
+service/app-rolling-service created
+deployment "app-rolling" successfully rolled out
+
+$ kubectl get pods -l app=app-rolling -o custom-columns=NAME,VERSION
+app-rolling-86d7d44d5b-4gphm   v1
+app-rolling-86d7d44d5b-jt2vr   v1
+app-rolling-86d7d44d5b-qq5c5   v1
+app-rolling-86d7d44d5b-szlfc   v1
+
+$ kubectl apply -f 01-rolling-update/deployment-v2.yaml   # maxSurge 1, maxUnavailable 0
+deployment.apps/app-rolling configured
+deployment "app-rolling" successfully rolled out
+
+$ kubectl get pods -l app=app-rolling -o custom-columns=NAME,VERSION
+app-rolling-56bff6d88c-dkm87   v2
+app-rolling-56bff6d88c-xg6r4   v2
+app-rolling-56bff6d88c-xzc62   v2
+app-rolling-56bff6d88c-z5fnp   v2
+app-rolling-86d7d44d5b-4gphm   v1
+
+$ kubectl rollout history deployment/app-rolling
+deployment.apps/app-rolling 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+

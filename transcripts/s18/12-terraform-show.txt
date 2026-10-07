@@ -1,0 +1,59 @@
+=== Session 18 / terraform show (apply, show, destroy against LocalStack 4.9.2) ===
+minty@homelab, terraform v1.16.4, captured 2026-10-07 21:59 IST
+
+$ terraform init -input=false
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+$ terraform apply -auto-approve
+  + bucket_name   = "noicehax-session18-demo"
+  + bucket_region = "ap-south-1"
+aws_s3_bucket.yatri1107: Creating...
+aws_s3_bucket.yatri1107: Creation complete after 0s [id=noicehax-session18-demo]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+bucket_arn = "arn:aws:s3:::noicehax-session18-demo"
+bucket_name = "noicehax-session18-demo"
+bucket_region = "ap-south-1"
+
+$ terraform show
+# aws_s3_bucket.yatri1107:
+resource "aws_s3_bucket" "yatri1107" {
+    acceleration_status         = null
+    arn                         = "arn:aws:s3:::noicehax-session18-demo"
+    bucket                      = "noicehax-session18-demo"
+    bucket_domain_name          = "noicehax-session18-demo.s3.amazonaws.com"
+    bucket_namespace            = "global"
+    bucket_prefix               = null
+    bucket_region               = "ap-south-1"
+    bucket_regional_domain_name = "noicehax-session18-demo.s3.ap-south-1.amazonaws.com"
+    force_destroy               = true
+    hosted_zone_id              = "Z11RGJOFQNVJUP"
+    id                          = "noicehax-session18-demo"
+    object_lock_enabled         = false
+    policy                      = null
+    region                      = "ap-south-1"
+    request_payer               = "BucketOwner"
+    tags                        = {}
+    tags_all                    = {}
+
+    grant {
+        id          = "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
+        permissions = [
+            "FULL_CONTROL",
+        ]
+        type        = "CanonicalUser"
+        uri         = null
+    }
+
+    server_side_encryption_configuration {
+
+$ terraform destroy -auto-approve
+aws_s3_bucket.yatri1107: Destroying... [id=noicehax-session18-demo]
+aws_s3_bucket.yatri1107: Destruction complete after 0s
+
+Destroy complete! Resources: 1 destroyed.

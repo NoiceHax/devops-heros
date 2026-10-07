@@ -1,0 +1,31 @@
+=== Session 13 / Module 01: hostPath ===
+minty@homelab, minikube v1.39.0, captured 2026-10-07 21:05 IST
+
+$ kubectl apply -f 01-volumes/hostpath-pod.yaml
+pod/hostpath-demo created
+
+$ kubectl wait --for=condition=Ready pod/hostpath-demo --timeout=90s
+pod/hostpath-demo condition met
+
+$ kubectl exec hostpath-demo -- sh -c 'echo hello-from-hostpath > /data/note.txt'
+
+$ kubectl delete pod hostpath-demo --wait
+pod "hostpath-demo" deleted from s13 namespace
+
+$ kubectl apply -f 01-volumes/hostpath-pod.yaml
+pod/hostpath-demo created
+
+$ kubectl wait --for=condition=Ready pod/hostpath-demo --timeout=90s
+pod/hostpath-demo condition met
+
+$ kubectl exec hostpath-demo -- cat /data/note.txt
+hello-from-hostpath
+
+# data survived Pod deletion because it lives on the node
+
+$ minikube ssh -- cat /tmp/hostpath-data/note.txt
+hello-from-hostpath
+
+$ kubectl delete pod hostpath-demo --wait=false
+pod "hostpath-demo" deleted from s13 namespace
+

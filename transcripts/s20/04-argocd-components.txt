@@ -1,0 +1,20 @@
+=== Session 20 / Argo CD components (v3.5.4) ===
+minty@homelab, captured 2026-10-07 22:29 IST
+
+$ kubectl -n argocd get pods
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          13m
+argocd-applicationset-controller-76fd8cdd4f-glpfj   1/1     Running   0          13m
+argocd-redis-bdbdffcb4-j7rmz                        1/1     Running   0          13m
+argocd-repo-server-d89c7967d-jghwt                  1/1     Running   0          13m
+argocd-server-776b7cdd4d-d7bml                      1/1     Running   0          13m
+
+$ kubectl -n argocd get app gitops-demo -o jsonpath=<sync policy>
+{"automated":{"prune":true,"selfHeal":true},"syncOptions":["CreateNamespace=true"]}
+
+$ kubectl -n argocd get app gitops-demo -o jsonpath=<managed resources>
+  Namespace/gitops-demo sync=Synced health=
+  Service/web sync=Synced health=
+  Deployment/web sync=Synced health=
+
+# Dex (SSO) and the notifications controller were scaled to 0 to save memory on this 4-core / 10 GB machine.

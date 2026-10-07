@@ -1,0 +1,49 @@
+=== Session 16 / Final pipeline: local verification ===
+minty@homelab, captured 2026-10-07 21:35 IST
+
+$ pytest -v
+============================= test session starts ==============================
+collecting ... collected 5 items
+
+tests/test_calculator.py::test_add PASSED                                [ 20%]
+tests/test_calculator.py::test_subtract PASSED                           [ 40%]
+tests/test_calculator.py::test_multiply PASSED                           [ 60%]
+tests/test_calculator.py::test_divide PASSED                             [ 80%]
+tests/test_calculator.py::test_divide_by_zero PASSED                     [100%]
+
+============================== 5 passed in 0.03s ===============================
+
+$ bash build.sh && cat build/build-info.txt
+
+Build files:
+total 16
+drwxrwxr-x 2 minty minty 4096 Oct  7 21:36 .
+drwxrwxr-x 6 minty minty 4096 Oct  7 21:36 ..
+-rw-rw-r-- 1 minty minty  101 Oct  7 21:36 build-info.txt
+-rw-rw-r-- 1 minty minty 1563 Oct  7 21:36 calculator.py
+
+Build completed successfully.
+Application: Session 16 Calculator
+Build Status: SUCCESS
+Build Date: Wed Oct  7 09:36:26 PM IST 2026
+
+$ docker build -t calculator:local .
+#9 naming to docker.io/library/calculator:local 0.4s done
+#9 unpacking to docker.io/library/calculator:local
+#9 unpacking to docker.io/library/calculator:local 6.2s done
+#9 DONE 14.6s
+
+$ echo "10 + 5" | docker run --rm -i calculator:local   # same smoke test the docker job runs
+Calculator Application
+----------------------
+Available operations: +, -, *, /
+Type 'q' or 'quit' to exit.
+
+Enter calculation (e.g., 10 + 5): Result: 15.0
+
+Enter calculation (e.g., 10 + 5): 
+Goodbye!
+
+$ docker run --rm calculator:local id -un   # runs as non-root
+appuser
+

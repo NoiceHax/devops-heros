@@ -1,0 +1,22 @@
+$ kubectl apply -f 04-recreate/deployment-v1.yaml -f 04-recreate/service.yaml
+deployment.apps/app-recreate created
+service/app-recreate-service created
+$ curl -s $(minikube ip):30040
+v1
+
+$ kubectl apply -f 04-recreate/deployment-v2.yaml   # strategy: Recreate
+deployment.apps/app-recreate configured
+
+$ for i in 1..12; do kubectl get deploy app-recreate; curl -s ...; done
+  READY=3/3  curl=(no response - DOWNTIME)
+  READY=0/3  curl=(no response - DOWNTIME)
+  READY=0/3  curl=(no response - DOWNTIME)
+  READY=0/3  curl=(no response - DOWNTIME)
+  READY=0/3  curl=(no response - DOWNTIME)
+  READY=0/3  curl=(no response - DOWNTIME)
+  READY=0/3  curl=(no response - DOWNTIME)
+  READY=2/3  curl=v2
+  READY=3/3  curl=v2
+  READY=3/3  curl=v2
+  READY=3/3  curl=v2
+  READY=3/3  curl=v2

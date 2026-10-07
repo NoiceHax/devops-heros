@@ -1,0 +1,268 @@
+=== Session 18 / Module 07: Init, Plan and Apply ===
+minty@homelab, terraform v1.16.4, AWS provider against LocalStack 4.14.0 (http://localhost:4566), captured 2026-09-29 12:30 IST
+
+$ terraform init
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using previously-installed hashicorp/aws v6.66.0
+
+Terraform has been successfully initialized!
+
+$ terraform fmt
+
+$ terraform validate
+Success! The configuration is valid.
+
+
+$ terraform plan
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # aws_s3_bucket.lifecycle_demo will be created
+  + resource "aws_s3_bucket" "lifecycle_demo" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
+      + bucket                      = (known after apply)
+      + bucket_domain_name          = (known after apply)
+      + bucket_namespace            = (known after apply)
+      + bucket_prefix               = "session18-lifecycle-"
+      + bucket_region               = (known after apply)
+      + bucket_regional_domain_name = (known after apply)
+      + force_destroy               = false
+      + hosted_zone_id              = (known after apply)
+      + id                          = (known after apply)
+      + object_lock_enabled         = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = "ap-south-1"
+      + request_payer               = (known after apply)
+      + tags                        = {
+          + "Name" = "Session 18 Lifecycle Demo"
+        }
+      + tags_all                    = {
+          + "Name" = "Session 18 Lifecycle Demo"
+        }
+      + website_domain              = (known after apply)
+      + website_endpoint            = (known after apply)
+
+      + cors_rule (known after apply)
+
+      + grant (known after apply)
+
+      + lifecycle_rule (known after apply)
+
+      + logging (known after apply)
+
+      + object_lock_configuration (known after apply)
+
+      + replication_configuration (known after apply)
+
+      + server_side_encryption_configuration (known after apply)
+
+      + versioning (known after apply)
+
+      + website (known after apply)
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + bucket_name = (known after apply)
+
+$ terraform apply
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # aws_s3_bucket.lifecycle_demo will be created
+  + resource "aws_s3_bucket" "lifecycle_demo" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
+      + bucket                      = (known after apply)
+      + bucket_domain_name          = (known after apply)
+      + bucket_namespace            = (known after apply)
+      + bucket_prefix               = "session18-lifecycle-"
+      + bucket_region               = (known after apply)
+      + bucket_regional_domain_name = (known after apply)
+      + force_destroy               = false
+      + hosted_zone_id              = (known after apply)
+      + id                          = (known after apply)
+      + object_lock_enabled         = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = "ap-south-1"
+      + request_payer               = (known after apply)
+      + tags                        = {
+          + "Name" = "Session 18 Lifecycle Demo"
+        }
+      + tags_all                    = {
+          + "Name" = "Session 18 Lifecycle Demo"
+        }
+      + website_domain              = (known after apply)
+      + website_endpoint            = (known after apply)
+
+      + cors_rule (known after apply)
+
+      + grant (known after apply)
+
+      + lifecycle_rule (known after apply)
+
+      + logging (known after apply)
+
+      + object_lock_configuration (known after apply)
+
+      + replication_configuration (known after apply)
+
+      + server_side_encryption_configuration (known after apply)
+
+      + versioning (known after apply)
+
+      + website (known after apply)
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + bucket_name = (known after apply)
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+aws_s3_bucket.lifecycle_demo: Creating...
+aws_s3_bucket.lifecycle_demo: Creation complete after 0s [id=session18-lifecycle-2ef695215b42371a3ff3bf67f2]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+bucket_name = "session18-lifecycle-2ef695215b42371a3ff3bf67f2"
+
+$ terraform output
+bucket_name = "session18-lifecycle-2ef695215b42371a3ff3bf67f2"
+
+$ terraform state list
+aws_s3_bucket.lifecycle_demo
+
+# Saved plan: apply exactly what was reviewed
+
+$ terraform plan -out=tfplan
+aws_s3_bucket.lifecycle_demo: Refreshing state... [id=session18-lifecycle-2ef695215b42371a3ff3bf67f2]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # aws_s3_bucket.lifecycle_demo will be updated in-place
+  ~ resource "aws_s3_bucket" "lifecycle_demo" {
+        id                          = "session18-lifecycle-2ef695215b42371a3ff3bf67f2"
+      ~ tags                        = {
+          ~ "Name" = "Session 18 Lifecycle Demo" -> "Session 18 Lifecycle Demo - saved plan"
+        }
+      ~ tags_all                    = {
+          ~ "Name" = "Session 18 Lifecycle Demo" -> "Session 18 Lifecycle Demo - saved plan"
+        }
+        # (14 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+$ terraform apply tfplan
+aws_s3_bucket.lifecycle_demo: Modifying... [id=session18-lifecycle-2ef695215b42371a3ff3bf67f2]
+aws_s3_bucket.lifecycle_demo: Modifications complete after 0s [id=session18-lifecycle-2ef695215b42371a3ff3bf67f2]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+bucket_name = "session18-lifecycle-2ef695215b42371a3ff3bf67f2"
+
+$ terraform destroy
+aws_s3_bucket.lifecycle_demo: Refreshing state... [id=session18-lifecycle-2ef695215b42371a3ff3bf67f2]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # aws_s3_bucket.lifecycle_demo will be destroyed
+  - resource "aws_s3_bucket" "lifecycle_demo" {
+      - arn                         = "arn:aws:s3:::session18-lifecycle-2ef695215b42371a3ff3bf67f2" -> null
+      - bucket                      = "session18-lifecycle-2ef695215b42371a3ff3bf67f2" -> null
+      - bucket_domain_name          = "session18-lifecycle-2ef695215b42371a3ff3bf67f2.s3.amazonaws.com" -> null
+      - bucket_namespace            = "global" -> null
+      - bucket_prefix               = "session18-lifecycle-" -> null
+      - bucket_region               = "ap-south-1" -> null
+      - bucket_regional_domain_name = "session18-lifecycle-2ef695215b42371a3ff3bf67f2.s3.ap-south-1.amazonaws.com" -> null
+      - force_destroy               = false -> null
+      - hosted_zone_id              = "Z11RGJOFQNVJUP" -> null
+      - id                          = "session18-lifecycle-2ef695215b42371a3ff3bf67f2" -> null
+      - object_lock_enabled         = false -> null
+      - region                      = "ap-south-1" -> null
+      - request_payer               = "BucketOwner" -> null
+      - tags                        = {
+          - "Name" = "Session 18 Lifecycle Demo - saved plan"
+        } -> null
+      - tags_all                    = {
+          - "Name" = "Session 18 Lifecycle Demo - saved plan"
+        } -> null
+        # (2 unchanged attributes hidden)
+
+      - grant {
+          - id          = "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a" -> null
+          - permissions = [
+              - "FULL_CONTROL",
+            ] -> null
+          - type        = "CanonicalUser" -> null
+            # (1 unchanged attribute hidden)
+        }
+
+      - server_side_encryption_configuration {
+          - rule {
+              - bucket_key_enabled = false -> null
+
+              - apply_server_side_encryption_by_default {
+                  - sse_algorithm     = "AES256" -> null
+                    # (1 unchanged attribute hidden)
+                }
+            }
+        }
+
+      - versioning {
+          - enabled    = false -> null
+          - mfa_delete = false -> null
+        }
+    }
+
+Plan: 0 to add, 0 to change, 1 to destroy.
+
+Changes to Outputs:
+  - bucket_name = "session18-lifecycle-2ef695215b42371a3ff3bf67f2" -> null
+
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: yes
+
+aws_s3_bucket.lifecycle_demo: Destroying... [id=session18-lifecycle-2ef695215b42371a3ff3bf67f2]
+aws_s3_bucket.lifecycle_demo: Destruction complete after 0s
+
+Destroy complete! Resources: 1 destroyed.
+

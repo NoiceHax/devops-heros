@@ -1,0 +1,55 @@
+=== Session 20 / Monitoring: Prometheus + node-exporter + blackbox + Grafana ===
+minty@homelab, captured 2026-10-07 22:08 IST
+
+$ docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+NAME                STATUS          PORTS
+s20-app             Up 29 seconds   0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+s20-blackbox        Up 31 seconds   9115/tcp
+s20-grafana         Up 26 seconds   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+s20-node-exporter   Up 33 seconds   9100/tcp
+s20-prometheus      Up 28 seconds   0.0.0.0:9091->9090/tcp, [::]:9091->9090/tcp
+
+## Metrics: are all scrape targets healthy?  query: up
+   {'instance': 'http://app:80', 'job': 'app-health'} => 1.0
+   {'instance': 'localhost:9090', 'job': 'prometheus'} => 1.0
+   {'instance': 'node-exporter:9100', 'job': 'node'} => 1.0
+
+## CPU utilization (%)   query: 100 - avg(rate(node_cpu_seconds_total{mode="idle"}[30s]))*100
+    => 59.433
+
+## Memory utilization (%)   query: (1 - MemAvailable/MemTotal)*100
+   {'instance': 'node-exporter:9100', 'job': 'node'} => 24.754
+
+## Application health   query: probe_success{job="app-health"}  (1 = HTTP 2xx)
+   {'instance': 'http://app:80', 'job': 'app-health'} => 1.0
+
+## Alert rules loaded
+   AppDown | inactive | critical
+   HighCpu | inactive | warning
+   HighMemory | inactive | warning
+
+## Logs: container logs of the monitored app (nginx access log)
+$ docker logs --tail 3 s20-app
+172.25.0.3 - - [07/Oct/2026:16:38:42 +0000] "GET / HTTP/1.1" 200 615 "-" "Blackbox Exporter/0.27.0" "-"
+172.25.0.3 - - [07/Oct/2026:16:38:47 +0000] "GET / HTTP/1.1" 200 615 "-" "Blackbox Exporter/0.27.0" "-"
+172.25.0.1 - - [07/Oct/2026:16:38:52 +0000] "GET / HTTP/1.1" 200 615 "-" "curl/8.18.0" "-"
+
+## Grafana: datasource + dashboard were provisioned from files (no clicking)
+$ curl localhost:3001/api/health
+{"database":"ok","version":"12.1.1","commit":"df5de8219b41d1e639e003bf5f3a85913761d167"}
+
+$ curl -u admin:admin localhost:3001/api/datasources   # name, type, url
+   Prometheus prometheus http://prometheus:9090
+
+$ curl -u admin:admin "localhost:3001/api/search?query=Session"   # title | folder | url
+   Session 20 | None | /dashboards/f/bg0iyv51bbf28b/session-20
+
+$ query through Grafana to Prometheus (proves the datasource works)
+   [('app-health', '1')]
+
+# NOTE: host CPU shows ~60% because this laptop is shared/busy; the metric is real, not a demo artefact.
+
+## Dashboard (provisioned from grafana/dashboards/overview.json)
+$ curl -u admin:admin "localhost:3001/api/search?type=dash-db"
+   Session 20: Host and App Overview | folder: Session 20 | http://localhost:3001/d/s20-overview
+   Panels: App health (UP/DOWN), HTTP probe latency, CPU %, Memory %, scrape targets up, samples ingested/s

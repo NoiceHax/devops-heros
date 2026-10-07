@@ -1,0 +1,22 @@
+$ kubectl get ingress yatri-ingress
+yatri-ingress nginx yatri.local 192.168.49.2 80
+  ingress.yaml is just RULES. On its own it routes nothing.
+
+$ kubectl get pods -n ingress-nginx
+ingress-nginx-admission-create-bk2m8 Completed
+ingress-nginx-admission-patch-nvk99 Completed
+ingress-nginx-controller-d7cd8c989-fqnrp Running
+  THIS pod is the controller - it watches Ingress objects and
+  rewrites its own nginx.conf to match. It does the routing.
+
+$ kubectl get ingressclass
+nginx (default)   k8s.io/ingress-nginx   <none>   90m
+
+$ kubectl describe ingress yatri-ingress | grep -A5 Rules
+Rules:
+  Host         Path  Backends
+  ----         ----  --------
+  yatri.local  
+               /api(/|$)(.*)   yatri-backend-service:80 (10.244.0.88
+               /               yatri-frontend-service:80 (10.244.0.8
+Annotations:   nginx.ingress.kubernetes.io/rewrite-target: /$2

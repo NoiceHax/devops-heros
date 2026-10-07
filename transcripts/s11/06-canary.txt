@@ -1,0 +1,13 @@
+$ kubectl get deploy app-stable app-canary   # 9 stable : 1 canary
+app-stable   9/9   9     9     49s
+app-canary   1/1   1     1     50s
+
+$ kubectl get endpoints myapp-canary-service -o jsonpath=... | wc -w
+  10   (one Service selects BOTH tracks - that is the whole trick)
+
+$ for i in $(seq 1 30); do curl -s $(minikube ip):30030; done | sort | uniq -c
+      1 CANARY v2
+     29 STABLE v1
+
+  Traffic split comes from the replica ratio, not a routing rule.
+  9:1 gives roughly 90/10. To roll back you scale the canary to 0.

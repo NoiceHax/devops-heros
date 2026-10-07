@@ -1,0 +1,67 @@
+=== Session 13 / Module 03: StorageClass + dynamic provisioning ===
+minty@homelab, minikube v1.39.0, captured 2026-10-07 21:06 IST
+
+$ kubectl get storageclass
+NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  20d
+
+$ kubectl apply -f 03-storageclass/pvc.yaml
+persistentvolumeclaim/dynamic-pvc created
+
+$ kubectl get pvc,pv
+NAME                                STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/dynamic-pvc   Pending                                      standard       <unset>                 0s
+
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS    CLAIM                                      STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/pvc-873badf4-42a8-40ee-8dc8-7cbac2eb26d1   5Gi        RWO            Delete           Bound     default/mysql-persistent-storage-mysql-0   standard       <unset>                          19d
+persistentvolume/pvc-881312c1-4bf2-4743-b401-efe7a1fa4d9c   5Gi        RWO            Delete           Bound     default/mysql-persistent-storage-mysql-2   standard       <unset>                          19d
+persistentvolume/pvc-c4e33adf-87e6-4736-9a9c-1f1b4772a237   500Mi      RWO            Delete           Bound     default/dynamic-pvc                        standard       <unset>                          18d
+persistentvolume/pvc-d97eb019-6ca1-4c2c-b2ed-79ec458f73d5   5Gi        RWO            Delete           Bound     default/mysql-persistent-storage-mysql-1   standard       <unset>                          19d
+persistentvolume/pvc-fb05c73e-7047-42fd-a7d6-5d6a2cc4b2b7   500Mi      RWO            Delete           Pending   s13/dynamic-pvc                            standard       <unset>                          0s
+
+$ kubectl apply -f 03-storageclass/pvc-typo.yaml
+persistentvolumeclaim/typo-pvc created
+
+$ kubectl get pvc typo-pvc
+NAME       STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+typo-pvc   Pending                                      fast-disk      <unset>                 4s
+
+$ kubectl describe pvc typo-pvc | tail -6
+VolumeMode:    Filesystem
+Used By:       <none>
+Events:
+  Type     Reason              Age   From                         Message
+  ----     ------              ----  ----                         -------
+  Warning  ProvisioningFailed  4s    persistentvolume-controller  storageclass.storage.k8s.io "fast-disk" not found
+
+$ kubectl apply -f 03-storageclass/sc-wait.yaml -f 03-storageclass/pvc-wait.yaml
+storageclass.storage.k8s.io/wait-standard created
+persistentvolumeclaim/wait-pvc created
+
+$ kubectl get pvc wait-pvc
+NAME       STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS    VOLUMEATTRIBUTESCLASS   AGE
+wait-pvc   Pending                                      wait-standard   <unset>                 3s
+
+# WaitForFirstConsumer: stays Pending until a Pod uses it
+
+$ kubectl apply -f 03-storageclass/pod-wait.yaml
+pod/wait-demo created
+
+$ kubectl wait --for=condition=Ready pod/wait-demo --timeout=90s
+error: timed out waiting for the condition on pods/wait-demo
+
+$ kubectl get pvc wait-pvc
+NAME       STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS    VOLUMEATTRIBUTESCLASS   AGE
+wait-pvc   Pending                                      wait-standard   <unset>                 93s
+
+$ kubectl delete pod wait-demo
+pod "wait-demo" deleted from s13 namespace
+
+$ kubectl delete pvc dynamic-pvc typo-pvc wait-pvc
+persistentvolumeclaim "dynamic-pvc" deleted from s13 namespace
+persistentvolumeclaim "typo-pvc" deleted from s13 namespace
+persistentvolumeclaim "wait-pvc" deleted from s13 namespace
+
+$ kubectl delete sc wait-standard
+storageclass.storage.k8s.io "wait-standard" deleted
+

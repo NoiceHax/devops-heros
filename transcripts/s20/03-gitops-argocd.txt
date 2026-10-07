@@ -1,0 +1,68 @@
+=== Session 20 / GitOps with Argo CD (Git is the source of truth) ===
+minty@homelab, argocd v3.5.4, captured 2026-10-07 22:27 IST
+
+# Source of truth: git://git-server.git.svc.cluster.local:9418/gitops-repo.git (in-cluster git daemon, git-server.yaml), path app/
+# Argo CD keeps the gitops-demo namespace equal to what Git says. I push with `kubectl port-forward` to that git daemon.
+
+## 1. Tell Argo CD about the repo
+$ kubectl apply -f /home/minty/classes/devops/devops-hw/session20-monitoring-observability-gitops/gitops-demo/argocd-application.yaml
+application.argoproj.io/gitops-demo created
+
+$ kubectl -n argocd get app gitops-demo
+NAME          SYNC STATUS   HEALTH STATUS
+gitops-demo   Synced        Healthy
+
+$ kubectl -n gitops-demo get deploy,svc,pods
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/web   2/2     2            2           13s
+
+NAME          TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/web   ClusterIP   10.102.116.75   <none>        80/TCP    13s
+
+NAME                       READY   STATUS    RESTARTS   AGE
+pod/web-5f49d46d64-ggszx   1/1     Running   0          12s
+pod/web-5f49d46d64-x6b2w   1/1     Running   0          12s
+
+## 2. Change desired state in Git: replicas 2 -> 3 (kubectl never touches the Deployment)
+$ git log --oneline
+b7aa864 Scale web to 3 replicas
+fba0a26 Initial app: namespace, deployment (2 replicas), service
+
+$ kubectl -n gitops-demo get deploy web
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+web    3/3     3            3           23s
+  sync=Synced health=Healthy revision=b7aa864
+
+## 3. Drift: someone scales it by hand, outside Git
+$ kubectl -n gitops-demo scale deploy web --replicas=1
+deployment.apps/web scaled
+$ kubectl -n gitops-demo get deploy web   # immediately after
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+web    3/1     3            3           25s
+$ kubectl -n gitops-demo get deploy web   # a few seconds later: selfHeal restored what Git says
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+web    3/3     3            3           47s
+  sync=Synced health=Healthy revision=b7aa864
+
+$ kubectl -n gitops-demo get events | grep -i scal
+46s         Normal   ScalingReplicaSet   deployment/web              Scaled up replica set web-5f49d46d64 from 0 to 2
+32s         Normal   ScalingReplicaSet   deployment/web              Scaled up replica set web-5f49d46d64 from 2 to 3
+24s         Normal   ScalingReplicaSet   deployment/web              Scaled down replica set web-5f49d46d64 from 3 to 1
+9s          Normal   ScalingReplicaSet   deployment/web              Scaled up replica set web-5f49d46d64 from 1 to 3
+
+## 4. Prune: delete the Service from Git
+$ kubectl -n gitops-demo get svc
+No resources found in gitops-demo namespace.
+  sync=Synced health=Healthy revision=ac534b8
+
+## 5. Rollback = git revert (Git history is the rollback mechanism)
+$ git log --oneline
+55d899d Revert "Remove the Service"
+ac534b8 Remove the Service
+b7aa864 Scale web to 3 replicas
+fba0a26 Initial app: namespace, deployment (2 replicas), service
+
+$ kubectl -n gitops-demo get svc
+NAME   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+web    ClusterIP   10.101.84.220   <none>        80/TCP    14s
+  sync=Synced health=Healthy revision=55d899d

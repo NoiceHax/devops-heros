@@ -1,0 +1,16 @@
+$ kubectl apply -f pod/nginx-pod.yaml
+pod/yatri-demo-pod unchanged
+pod/yatri-demo-pod condition met
+
+$ kubectl port-forward pod/yatri-demo-pod 18080:80 &
+Forwarding from 127.0.0.1:18080 -> 80
+
+$ curl -s localhost:18080 | head -5
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+
+  port-forward is a kubectl process tunnel on the host, not a
+  Service. It dies with the terminal - debugging only.

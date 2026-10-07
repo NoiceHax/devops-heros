@@ -1,0 +1,200 @@
+=== Session 15 / Task 1: Helm commands ===
+minty@homelab, helm v4.3.0+gbec5b06, captured 2026-10-07 21:25 IST
+
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+"bitnami" has been added to your repositories
+
+$ helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+
+$ helm repo list
+NAME   	URL                               
+bitnami	https://charts.bitnami.com/bitnami
+
+$ helm search repo nginx | head -6
+NAME                            	CHART VERSION	APP VERSION	DESCRIPTION                                       
+bitnami/nginx                   	25.2.1       	1.31.6     	NGINX Open Source is a web server that can be a...
+bitnami/nginx-ingress-controller	12.0.7       	1.13.1     	NGINX Ingress Controller is an Ingress controll...
+bitnami/nginx-intel             	2.1.15       	0.4.9      	DEPRECATED NGINX Open Source for Intel is a lig...
+
+$ helm search hub nginx --max-col-width 60 | head -4
+URL                                                         	CHART VERSION  	APP VERSION                                     	DESCRIPTION                                                 
+https://artifacthub.io/packages/helm/cloudpirates-nginx/n...	0.16.12        	1.31.6                                          	Nginx is a high-performance HTTP server and reverse proxy.  
+https://artifacthub.io/packages/helm/quench-nginx/nginx     	0.0.15         	1.30.5                                          	High-performance web server, reverse proxy, and load bala...
+https://artifacthub.io/packages/helm/krakazyabra/nginx      	1.0.0          	1.19.0                                          	Nginx Helm chart for Kubernetes                             
+
+$ helm create demo-chart
+Creating demo-chart
+
+$ find demo-chart -maxdepth 2 -not -path '*/charts*' | sort
+demo-chart
+demo-chart/Chart.yaml
+demo-chart/.helmignore
+demo-chart/templates
+demo-chart/templates/deployment.yaml
+demo-chart/templates/_helpers.tpl
+demo-chart/templates/hpa.yaml
+demo-chart/templates/httproute.yaml
+demo-chart/templates/ingress.yaml
+demo-chart/templates/NOTES.txt
+demo-chart/templates/serviceaccount.yaml
+demo-chart/templates/service.yaml
+demo-chart/templates/tests
+demo-chart/values.yaml
+
+$ helm lint demo-chart
+==> Linting demo-chart
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+$ helm install demo demo-chart --set service.type=ClusterIP --set resources.requests.cpu=10m
+NAME: demo
+LAST DEPLOYED: Wed Oct  7 21:25:52 2026
+NAMESPACE: s15
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace s15 -l "app.kubernetes.io/name=demo-chart,app.kubernetes.io/instance=demo" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace s15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace s15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+$ kubectl rollout status deploy/demo-demo-chart --timeout=90s
+Waiting for deployment "demo-demo-chart" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "demo-demo-chart" rollout to finish: 0 of 1 updated replicas are available...
+deployment "demo-demo-chart" successfully rolled out
+
+$ helm list
+NAME	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART           	APP VERSION
+demo	s15      	1       	2026-10-07 21:25:52.576516626 +0530 IST	deployed	demo-chart-0.1.0	1.16.0     
+
+$ helm status demo
+NAME: demo
+LAST DEPLOYED: Wed Oct  7 21:25:52 2026
+NAMESPACE: s15
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/ServiceAccount
+NAME              AGE
+demo-demo-chart   18s
+
+==> v1/Service
+NAME              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+demo-demo-chart   ClusterIP   10.107.245.153   <none>        80/TCP    18s
+
+==> v1/Deployment
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+demo-demo-chart   1/1     1            1           17s
+
+==> v1/Pod(related)
+NAME                               READY   STATUS    RESTARTS   AGE
+demo-demo-chart-6d864cf9b5-wk9rl   1/1     Running   0          17s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace s15 -l "app.kubernetes.io/name=demo-chart,app.kubernetes.io/instance=demo" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace s15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace s15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+$ helm get values demo
+USER-SUPPLIED VALUES:
+resources:
+  requests:
+    cpu: 10m
+service:
+  type: ClusterIP
+
+$ helm get values demo --all | head -12
+COMPUTED VALUES:
+affinity: {}
+autoscaling:
+  enabled: false
+  maxReplicas: 100
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+fullnameOverride: ""
+httpRoute:
+  annotations: {}
+  enabled: false
+  hostnames:
+
+$ helm get manifest demo | head -30
+---
+# Source: demo-chart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-demo-chart
+  labels:
+    helm.sh/chart: demo-chart-0.1.0
+    app.kubernetes.io/name: demo-chart
+    app.kubernetes.io/instance: demo
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+
+---
+# Source: demo-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-demo-chart
+  labels:
+    helm.sh/chart: demo-chart-0.1.0
+    app.kubernetes.io/name: demo-chart
+    app.kubernetes.io/instance: demo
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+
+$ helm upgrade demo demo-chart --set replicaCount=2 --set service.type=ClusterIP --set resources.requests.cpu=10m
+Release "demo" has been upgraded. Happy Helming!
+NAME: demo
+LAST DEPLOYED: Wed Oct  7 21:26:10 2026
+NAMESPACE: s15
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: Upgrade complete
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace s15 -l "app.kubernetes.io/name=demo-chart,app.kubernetes.io/instance=demo" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace s15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace s15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+$ helm history demo
+REVISION	UPDATED                 	STATUS    	CHART           	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 21:25:52 2026	superseded	demo-chart-0.1.0	1.16.0     	Install complete
+2       	Wed Oct  7 21:26:10 2026	deployed  	demo-chart-0.1.0	1.16.0     	Upgrade complete
+
+$ helm rollback demo 1
+Rollback was a success! Happy Helming!
+
+$ helm history demo
+REVISION	UPDATED                 	STATUS    	CHART           	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 21:25:52 2026	superseded	demo-chart-0.1.0	1.16.0     	Install complete
+2       	Wed Oct  7 21:26:10 2026	superseded	demo-chart-0.1.0	1.16.0     	Upgrade complete
+3       	Wed Oct  7 21:26:12 2026	deployed  	demo-chart-0.1.0	1.16.0     	Rollback to 1   
+
+$ kubectl get deploy
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+demo-demo-chart   1/1     1            1           21s
+
+$ helm uninstall demo
+release "demo" uninstalled
+
+$ helm list
+NAME	NAMESPACE	REVISION	UPDATED	STATUS	CHART	APP VERSION
+

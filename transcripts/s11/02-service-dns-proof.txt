@@ -1,0 +1,22 @@
+$ kubectl exec curl-client -- curl -s web-service-clusterip:8080 | grep title
+<title>Welcome to nginx!</title>
+
+$ curl -s 192.168.49.2:30080 | grep title        # NodePort, from the host
+<title>Welcome to nginx!</title>
+
+$ nslookup web-service-clusterip.default.svc.cluster.local   # 1 virtual IP
+Name:	web-service-clusterip.default.svc.cluster.local
+Address: 10.108.113.250
+
+$ nslookup web-service-headless.default.svc.cluster.local    # 3 pod IPs
+Name:	web-service-headless.default.svc.cluster.local
+Address: 10.244.0.19
+Name:	web-service-headless.default.svc.cluster.local
+Address: 10.244.0.17
+Name:	web-service-headless.default.svc.cluster.local
+Address: 10.244.0.18
+
+$ kubectl exec curl-client -- cat /etc/resolv.conf
+search default.svc.cluster.local svc.cluster.local cluster.local tail3
+nameserver 10.96.0.10
+options ndots:5

@@ -1,0 +1,16 @@
+$ kubectl get svc
+NAME                        TYPE           CLUSTER-IP       EXTERNAL-IP        PORT(S)  
+external-database-service   ExternalName   <none>           nencyravaliya.me   <none>   
+kubernetes                  ClusterIP      10.96.0.1        <none>             443/TCP  
+web-service-clusterip       ClusterIP      10.108.113.250   <none>             8080/TCP 
+web-service-headless        ClusterIP      None             <none>             80/TCP   
+web-service-loadbalancer    LoadBalancer   10.105.228.7     <pending>          80:30324/
+web-service-nodeport        NodePort       10.96.54.218     <none>             80:30080/
+
+$ kubectl get endpoints | cut -c1-70
+NAME                       ENDPOINTS                                  
+kubernetes                 192.168.49.2:8443                          
+web-service-clusterip      10.244.0.7:80,10.244.0.8:80,10.244.0.9:80  
+web-service-headless       10.244.0.17:80,10.244.0.18:80,10.244.0.19:8
+web-service-loadbalancer   10.244.0.12:80,10.244.0.13:80,10.244.0.14:8
+web-service-nodeport       10.244.0.10:80,10.244.0.11:80              

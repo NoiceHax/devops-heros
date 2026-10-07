@@ -1,0 +1,16 @@
+$ kubectl rollout history deployment/myapp
+deployment.apps/myapp 
+REVISION  CHANGE-CAUSE
+1         <none>
+
+
+$ kubectl rollout history rs/myapp-rs        # a bare ReplicaSet
+error: no history viewer has been implemented for "ReplicaSet.apps"
+
+  That error IS the answer: a ReplicaSet only keeps N pods alive.
+  It has no revisions, no rollout, no undo. A Deployment manages
+  ReplicaSets and adds the versioning on top - which is why you
+  never write a bare ReplicaSet in production.
+
+$ kubectl get rs -l app=myapp
+myapp-5b9587f95d 3 3 3

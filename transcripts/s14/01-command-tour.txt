@@ -1,0 +1,154 @@
+=== Session 14 / Task 1: kubectl command tour ===
+minty@homelab, minikube, captured 2026-10-07 21:18 IST
+
+$ kubectl apply -f 01-kubectl-get/pod.yaml -f 03-kubectl-logs/pod.yaml
+pod/get-demo created
+pod/logs-demo created
+
+$ kubectl wait --for=condition=Ready pod/get-demo pod/logs-demo --timeout=90s
+pod/get-demo condition met
+pod/logs-demo condition met
+
+$ kubectl get pods
+NAME        READY   STATUS    RESTARTS   AGE
+get-demo    1/1     Running   0          5s
+logs-demo   1/1     Running   0          5s
+
+$ kubectl get pods -o wide
+NAME        READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+get-demo    1/1     Running   0          5s    10.244.0.42   minikube   <none>           <none>
+logs-demo   1/1     Running   0          5s    10.244.0.43   minikube   <none>           <none>
+
+$ kubectl get pod get-demo -o yaml | head -25
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"app":"get-demo"},"name":"get-demo","namespace":"s14"},"spec":{"containers":[{"image":"nginx:1.27","name":"nginx","ports":[{"containerPort":80}]}]}}
+  creationTimestamp: "2026-10-07T15:48:56Z"
+  generation: 1
+  labels:
+    app: get-demo
+  name: get-demo
+  namespace: s14
+  resourceVersion: "420138"
+  uid: c45f4cdc-f136-4b87-8251-552335939760
+spec:
+  containers:
+  - image: nginx:1.27
+    imagePullPolicy: IfNotPresent
+    name: nginx
+    ports:
+    - containerPort: 80
+      protocol: TCP
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+
+$ kubectl describe pod get-demo | sed -n '1,20p;/Events:/,$p'
+Name:             get-demo
+Namespace:        s14
+Priority:         0
+Service Account:  default
+Node:             minikube/192.168.49.2
+Start Time:       Wed, 07 Oct 2026 21:18:56 +0530
+Labels:           app=get-demo
+Annotations:      <none>
+Status:           Running
+IP:               10.244.0.42
+IPs:
+  IP:  10.244.0.42
+Containers:
+  nginx:
+    Container ID:   containerd://df726e29192235caf0ced8c33ad1471fa2e01ad2854123b5a225612d3e44053f
+    Image:          nginx:1.27
+    Image ID:       docker.io/library/nginx@sha256:6784fb0834aa7dbbe12e3d7471e69c290df3e6ba810dc38b34ae33d3c1c05f7d
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  5s    default-scheduler  Successfully assigned s14/get-demo to minikube
+  Normal  Pulled     2s    kubelet            spec.containers{nginx}: Container image "nginx:1.27" already present on machine and can be accessed by the pod
+  Normal  Created    1s    kubelet            spec.containers{nginx}: Container created
+  Normal  Started    0s    kubelet            spec.containers{nginx}: Container started
+
+$ kubectl logs logs-demo --tail=5
+Application started
+Connecting to database...
+Database connection successful
+Application is running
+Application is healthy
+
+$ kubectl exec get-demo -- nginx -v
+nginx version: nginx/1.27.5
+
+$ kubectl exec get-demo -- sh -c 'hostname; cat /etc/resolv.conf'
+get-demo
+search s14.svc.cluster.local svc.cluster.local cluster.local tail3ed9c7.ts.net
+nameserver 10.96.0.10
+options ndots:5
+
+$ kubectl events --for pod/get-demo
+LAST SEEN   TYPE     REASON      OBJECT         MESSAGE
+6s          Normal   Scheduled   Pod/get-demo   Successfully assigned s14/get-demo to minikube
+3s          Normal   Pulled      Pod/get-demo   Container image "nginx:1.27" already present on machine and can be accessed by the pod
+2s          Normal   Created     Pod/get-demo   Container created
+1s          Normal   Started     Pod/get-demo   Container started
+
+$ kubectl explain pod.spec.containers.livenessProbe --recursive | head -15
+KIND:       Pod
+VERSION:    v1
+
+FIELD: livenessProbe <Probe>
+
+
+DESCRIPTION:
+    Periodic probe of container liveness. Container will be restarted if the
+    probe fails. Cannot be updated. More info:
+    https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+    Probe describes a health check to be performed against a container to
+    determine whether it is alive or ready to receive traffic.
+    
+FIELDS:
+  exec	<ExecAction>
+
+$ kubectl explain deployment.spec.strategy
+GROUP:      apps
+KIND:       Deployment
+VERSION:    v1
+
+FIELD: strategy <DeploymentStrategy>
+
+
+DESCRIPTION:
+    The deployment strategy to use to replace existing pods with new ones.
+    DeploymentStrategy describes how to replace existing pods with new ones.
+    
+FIELDS:
+  rollingUpdate	<RollingUpdateDeployment>
+    Rolling update config params. Present only if DeploymentStrategyType =
+    RollingUpdate.
+
+  type	<string>
+  enum: Recreate, RollingUpdate
+    Type of deployment. Can be "Recreate" or "RollingUpdate". Default is
+    RollingUpdate.
+    
+    Possible enum values:
+     - `"Recreate"` Kill all existing pods before creating new ones.
+     - `"RollingUpdate"` Replace the old ReplicaSets by new one using rolling
+    update i.e gradually scale down the old ReplicaSets and scale up the new
+    one.
+
+
+
+$ kubectl top pods
+error: metrics not available yet
+
+$ kubectl top nodes
+NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+minikube   819m         20%      1856Mi          16%         
+

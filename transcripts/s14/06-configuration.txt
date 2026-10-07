@@ -1,0 +1,47 @@
+=== Session 14 / Issue: Configuration (CreateContainerConfigError) ===
+minty@homelab, minikube, captured 2026-10-07 21:22 IST
+
+$ kubectl apply -f 11-configuration-issues/configmap.yaml -f 11-configuration-issues/broken-pod.yaml
+configmap/app-config created
+pod/config-demo created
+
+$ kubectl get pod config-demo
+NAME          READY   STATUS                       RESTARTS   AGE
+config-demo   0/1     CreateContainerConfigError   0          16s
+
+$ kubectl describe pod config-demo | sed -n '/Events:/,$p'
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  15s                default-scheduler  Successfully assigned s14/config-demo to minikube
+  Normal   Pulled     10s (x2 over 11s)  kubelet            spec.containers{app}: Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Warning  Failed     10s (x2 over 11s)  kubelet            spec.containers{app}: Error: couldn't find key log_level in ConfigMap s14/app-config
+
+$ kubectl get cm app-config -o yaml | sed -n '/data:/,/kind:/p'
+data:
+  log-level: debug
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"log-level":"debug"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"app-config","namespace":"s14"}}
+  creationTimestamp: "2026-10-07T15:52:22Z"
+  name: app-config
+  namespace: s14
+  resourceVersion: "420478"
+  uid: 36aef3d4-73fe-493a-aa95-bef0aa8db274
+
+# ROOT CAUSE: Pod asks for key 'log_level' but the ConfigMap key is 'log-level' (underscore vs dash).
+
+$ kubectl delete pod config-demo --wait
+pod "config-demo" deleted from s14 namespace
+
+$ kubectl apply -f 11-configuration-issues/fixed-pod.yaml
+pod/config-demo created
+
+$ kubectl wait --for=condition=Ready pod/config-demo --timeout=60s
+pod/config-demo condition met
+
+$ kubectl logs config-demo
+LOG_LEVEL=debug
+

@@ -1,0 +1,74 @@
+=== Session 14 / Mini project: broken Deployment + Service ===
+minty@homelab, minikube, captured 2026-10-07 21:22 IST
+
+$ kubectl apply -f mini-project/broken-deployment.yaml -f mini-project/broken-service.yaml
+deployment.apps/troubleshooting-app created
+service/troubleshooting-service created
+
+$ kubectl get pods
+NAME                                  READY   STATUS             RESTARTS   AGE
+troubleshooting-app-8768c88cf-cq2z6   0/1     ImagePullBackOff   0          30s
+troubleshooting-app-8768c88cf-tgxzp   0/1     ImagePullBackOff   0          30s
+
+$ kubectl get svc,endpoints troubleshooting-service
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/troubleshooting-service   ClusterIP   10.101.209.41   <none>        80/TCP    30s
+
+NAME                                ENDPOINTS   AGE
+endpoints/troubleshooting-service   <none>      30s
+
+$ kubectl describe pod -l app=troubleshooting-app | grep -E 'Failed|Back-off|pull' | head -5
+
+# FINDING 1: pods are ErrImagePull -> image tag nginx:1.27-typo does not exist.
+
+# FINDING 2: Service has no endpoints -> selector 'troubleshooting-apps' matches no Pod labels.
+
+$ kubectl apply -f mini-project/deployment.yaml
+deployment.apps/troubleshooting-app configured
+
+$ kubectl rollout status deploy/troubleshooting-app --timeout=90s
+Waiting for deployment spec update to be observed...
+Waiting for deployment "troubleshooting-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 old replicas are pending termination...
+deployment "troubleshooting-app" successfully rolled out
+
+$ kubectl get svc,endpoints troubleshooting-service
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/troubleshooting-service   ClusterIP   10.101.209.41   <none>        80/TCP    46s
+
+NAME                                ENDPOINTS   AGE
+endpoints/troubleshooting-service   <none>      46s
+
+$ kubectl apply -f mini-project/service.yaml
+service/troubleshooting-service configured
+
+$ kubectl get svc,endpoints troubleshooting-service
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/troubleshooting-service   ClusterIP   10.101.209.41   <none>        80/TCP    46s
+
+NAME                                ENDPOINTS                       AGE
+endpoints/troubleshooting-service   10.244.0.56:80,10.244.0.57:80   46s
+
+$ kubectl run curl --image=busybox:1.36 --restart=Never --rm -i -- wget -qO- -T 3 http://troubleshooting-service | head -4
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+warning: couldn't attach to pod/curl, falling back to streaming logs: unable to upgrade connection: container curl not found in pod curl_s14
+
+$ kubectl get pods
+NAME                                   READY   STATUS    RESTARTS   AGE
+troubleshooting-app-59d4957864-4bttb   1/1     Running   0          24s
+troubleshooting-app-59d4957864-6v88w   1/1     Running   0          18s
+

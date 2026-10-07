@@ -1,0 +1,20 @@
+$ minikube version
+minikube version: v1.39.0
+$ kubectl version --client
+Client Version: v1.37.0
+
+$ minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+
+$ kubectl get nodes
+minikube   Ready   control-plane   88m   v1.37.0
+
+$ docker ps --filter name=minikube --format "{{.Names}} {{.Status}}"
+minikube  Up About an hour
+  the whole cluster is one container on this host

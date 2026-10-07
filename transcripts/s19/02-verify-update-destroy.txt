@@ -1,0 +1,99 @@
+=== Session 19 / verify, update, destroy ===
+minty@homelab, captured 2026-10-07 22:02 IST
+
+## Verify independently with the AWS CLI (not Terraform)
+
+$ awslocal ec2 describe-vpcs --filters Name=tag:Project,Values=session19 --query "Vpcs[].[VpcId,CidrBlock]" --output text
+vpc-4080b03332779aeac	10.20.0.0/16
+
+$ awslocal ec2 describe-instances --filters Name=tag:Project,Values=session19 --query "Reservations[].Instances[].[InstanceId,InstanceType,State.Name,PrivateIpAddress,SubnetId]" --output text
+i-f7602e6e5ff55836c	t3.micro	running	10.20.1.4	subnet-09f0ac7b010395956
+
+$ awslocal ec2 describe-security-groups --filters Name=group-name,Values=session19-web-sg --query "SecurityGroups[0].IpPermissions[].[FromPort,ToPort,IpRanges[0].CidrIp]" --output text
+80	80	0.0.0.0/0
+443	443	0.0.0.0/0
+
+$ awslocal s3api get-bucket-versioning --bucket session19-assets-demo
+{
+    "Status": "Enabled"
+}
+
+## Idempotency: does a second plan find nothing to do?
+
+$ terraform plan -var-file=localstack.tfvars          # right after the first apply (observed on a fresh apply, twice)
+  # aws_s3_bucket.assets will be updated in-place
+  ~ tags = { + "ManagedBy" = "Terraform", + "Name" = "session19-assets", + "Project" = "session19" }
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+# Not real drift in the config: LocalStack 4.9 drops the bucket's tags when the versioning / public-access-block
+# sub-resources are created right after the bucket (the session 18 `terraform show` also showed `tags = {}`).
+# Real AWS keeps them. Terraform did its job: it noticed the difference and offers to fix it.
+
+$ terraform apply -var-file=localstack.tfvars -auto-approve
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+$ awslocal s3api get-bucket-tagging --bucket session19-assets-demo     # tags are back
+Project=session19, ManagedBy=Terraform, ...
+
+$ terraform plan -var-file=localstack.tfvars
+No changes. Your infrastructure matches the configuration.
+
+## State: what Terraform recorded for the VPC
+
+$ terraform state show aws_vpc.main | head -12
+# aws_vpc.main:
+resource "aws_vpc" "main" {
+    arn                                  = "arn:aws:ec2:ap-south-1:000000000000:vpc/vpc-4080b03332779aeac"
+    assign_generated_ipv6_cidr_block     = false
+    cidr_block                           = "10.20.0.0/16"
+    default_network_acl_id               = "acl-3feeae9cbcf1e8f5b"
+    default_route_table_id               = "rtb-b35fce903dd7766a1"
+    default_security_group_id            = "sg-eb0c3855f48d35b84"
+    dhcp_options_id                      = "default"
+    enable_dns_hostnames                 = true
+    enable_dns_support                   = true
+    enable_network_address_usage_metrics = false
+
+## Change: add Environment = "dev" to local.common_tags -> every taggable resource updates IN PLACE (nothing replaced)
+
+$ terraform plan -var-file=localstack.tfvars   # after editing local.common_tags (plan only, not applied)
+  # aws_instance.web will be updated in-place
+  # aws_internet_gateway.main will be updated in-place
+  # aws_route_table.public will be updated in-place
+  # aws_s3_bucket.assets will be updated in-place
+  # aws_security_group.web will be updated in-place
+  # aws_subnet.public will be updated in-place
+  # aws_vpc.main will be updated in-place
+Plan: 0 to add, 7 to change, 0 to destroy.
+
+# 7 resources, not 1: the tag lives in local.common_tags, which is merged into every resource's tags, so one edit fans out.
+# The edit was reverted afterwards (never applied); the destroy below uses the original configuration.
+
+$ terraform destroy -var-file=localstack.tfvars -auto-approve
+aws_s3_bucket_public_access_block.assets: Destroying... [id=session19-assets-demo]
+aws_s3_bucket_versioning.assets: Destroying... [id=session19-assets-demo]
+aws_route_table_association.public: Destroying... [id=rtbassoc-27a3fba2d6d4172f6]
+aws_instance.web: Destroying... [id=i-f7602e6e5ff55836c]
+aws_s3_bucket_versioning.assets: Destruction complete after 0s
+aws_route_table_association.public: Destruction complete after 0s
+aws_s3_bucket_public_access_block.assets: Destruction complete after 0s
+aws_route_table.public: Destroying... [id=rtb-828f5bcca5546c48c]
+aws_s3_bucket.assets: Destroying... [id=session19-assets-demo]
+aws_s3_bucket.assets: Destruction complete after 0s
+aws_route_table.public: Destruction complete after 0s
+aws_instance.web: Destruction complete after 10s
+aws_internet_gateway.main: Destroying... [id=igw-6361d2244059a4d05]
+aws_subnet.public: Destroying... [id=subnet-09f0ac7b010395956]
+aws_security_group.web: Destroying... [id=sg-6372f55198b926c48]
+aws_subnet.public: Destruction complete after 0s
+aws_internet_gateway.main: Destruction complete after 0s
+aws_security_group.web: Destruction complete after 0s
+aws_vpc.main: Destroying... [id=vpc-4080b03332779aeac]
+aws_vpc.main: Destruction complete after 1s
+Destroy complete! Resources: 10 destroyed.
+
+$ terraform state list   (empty)
+
+$ awslocal ec2 describe-vpcs --filters Name=tag:Project,Values=session19 --query "length(Vpcs)"
+0
+0

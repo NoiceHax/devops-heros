@@ -1,0 +1,19 @@
+$ kubectl describe pod $BROKEN | grep -A4 Events
+  Warning  Failed     25s (x2 over 42s)  kubelet            spec.con
+tainers{backend}: Failed to pull image "yatri-backend:non-existent-t
+ag-v999": failed to pull and unpack image "docker.io/library/yatri-b
+ackend:non-existent-tag-v999": failed to resolve reference "docker.i
+
+$ kubectl rollout status deployment/yatri-backend --timeout=20s
+error: timed out waiting for the condition
+  the rollout is stuck - it will never finish on its own
+
+$ kubectl rollout undo deployment/yatri-backend
+deployment.apps/yatri-backend rolled back
+deployment "yatri-backend" successfully rolled out
+
+$ kubectl get pods -l app=yatri-backend
+yatri-backend-7554bd5c75-6xgc5 1/1 Running
+yatri-backend-7554bd5c75-pplz4 1/1 Running
+yatri-backend-7554bd5c75-w6fhz 1/1 Running
+yatri-backend-77dbb657cd-d99sw 0/1 Terminating

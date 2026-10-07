@@ -1,0 +1,65 @@
+=== Session 13 / Module 05: Probes ===
+minty@homelab, captured 2026-10-07 21:12 IST
+
+$ kubectl apply -f 05-probes/liveness.yaml -f 05-probes/readiness.yaml -f 05-probes/startup.yaml
+pod/liveness-demo created
+pod/readiness-demo created
+pod/startup-demo created
+
+$ kubectl wait --for=condition=Ready pod/liveness-demo pod/readiness-demo pod/startup-demo --timeout=120s
+pod/liveness-demo condition met
+pod/readiness-demo condition met
+pod/startup-demo condition met
+
+$ kubectl get pods
+NAME             READY   STATUS        RESTARTS   AGE
+liveness-demo    1/1     Running       0          14s
+load-generator   1/1     Terminating   0          3m11s
+readiness-demo   1/1     Running       0          13s
+startup-demo     1/1     Running       0          12s
+
+$ kubectl describe pod liveness-demo | grep -E 'Liveness|Readiness|Startup'
+    Liveness:       http-get http://:80/ delay=5s timeout=2s period=5s successThreshold=1 failureThreshold=3
+
+$ kubectl describe pod startup-demo | grep -E 'Liveness|Readiness|Startup'
+    Liveness:       http-get http://:80/ delay=0s timeout=1s period=5s successThreshold=1 failureThreshold=3
+    Readiness:      http-get http://:80/ delay=0s timeout=1s period=5s successThreshold=1 failureThreshold=3
+    Startup:        http-get http://:80/ delay=0s timeout=1s period=2s successThreshold=1 failureThreshold=30
+
+## Readiness failure: break the probe by removing nginx's index page
+
+$ kubectl exec readiness-demo -- sh -c 'mv /usr/share/nginx/html/index.html /tmp/'
+
+$ kubectl get pod readiness-demo
+NAME             READY   STATUS    RESTARTS   AGE
+readiness-demo   0/1     Running   0          29s
+
+$ kubectl get endpoints readiness-demo --ignore-not-found
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+
+# READY 0/1: kubelet marks it unready and removes it from Service endpoints, container is NOT restarted
+
+$ kubectl exec readiness-demo -- sh -c 'mv /tmp/index.html /usr/share/nginx/html/'
+
+$ kubectl get pod readiness-demo
+NAME             READY   STATUS    RESTARTS   AGE
+readiness-demo   1/1     Running   0          40s
+
+## Liveness failure: a pod whose probe path does not exist
+
+$ kubectl get pod liveness-fail
+NAME            READY   STATUS    RESTARTS      AGE
+liveness-fail   1/1     Running   3 (13s ago)   40s
+
+$ kubectl describe pod liveness-fail | grep -A8 'Events:'
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  40s                default-scheduler  Successfully assigned s13/liveness-fail to minikube
+  Warning  Unhealthy  13s (x6 over 34s)  kubelet            spec.containers{liveness-fail}: Liveness probe failed: HTTP probe failed with statuscode: 404
+  Normal   Killing    13s (x3 over 31s)  kubelet            spec.containers{liveness-fail}: Container liveness-fail failed liveness probe, will be restarted
+  Warning  BackOff    12s (x2 over 12s)  kubelet            spec.containers{liveness-fail}: Back-off restarting failed container liveness-fail in pod liveness-fail_s13(7cae7005-9551-423b-b234-1e45937e3a3e)
+  Normal   Pulled     2s (x4 over 39s)   kubelet            spec.containers{liveness-fail}: Container image "nginx:1.27" already present on machine and can be accessed by the pod
+  Normal   Created    1s (x4 over 37s)   kubelet            spec.containers{liveness-fail}: Container created
+
+# Liveness failures make the kubelet restart the container (RESTARTS climbs)

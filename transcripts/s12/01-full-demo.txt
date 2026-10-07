@@ -1,0 +1,24 @@
+$ bash run-demo.sh    (steps 1-8; step 9 needs sudo for /etc/hosts)
+
+$ kubectl get cm yatri-app-config; kubectl get secret yatri-db-secret
+yatri-app-config   5     36s
+yatri-db-secret   Opaque   3     36s
+
+$ kubectl get pods,ingress
+yatri-backend-6c58cb99c7-vm72p 1/1 Running
+yatri-backend-6c58cb99c7-z9xdc 1/1 Running
+yatri-frontend-ddcfc4b5f-mflm4 1/1 Running
+yatri-frontend-ddcfc4b5f-rnxfh 1/1 Running
+yatri-ingress nginx yatri.local 80
+
+$ curl -H "Host: yatri.local" http://$(minikube ip)/       # path /
+<title>Welcome to nginx!</title>
+
+$ curl -H "Host: yatri.local" http://$(minikube ip)/api/   # path /api
+Yatri Backend API
+=================
+ENVIRONMENT     : production
+LOG_LEVEL       : INFO
+DEFAULT_CURRENCY: INR
+POSTGRES_USER   : yatri_admin
+POSTGRES_DB     : yatri_production_db

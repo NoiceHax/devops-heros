@@ -1,0 +1,20 @@
+$ cat pod.yaml     # typed from memory, not copied
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-first-pod
+  labels:
+    app: my-first-pod
+spec:
+  containers:
+    - name: web
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+
+$ kubectl apply -f pod.yaml
+pod/my-first-pod created
+pod/my-first-pod condition met
+
+$ kubectl get pod my-first-pod -o wide
+my-first-pod   Running   10.244.0.72   minikube

@@ -1,0 +1,36 @@
+=== Session 14 / Issue: ImagePullBackOff / ErrImagePull ===
+minty@homelab, minikube, captured 2026-10-07 21:20 IST
+
+$ kubectl apply -f 07-imagepullbackoff/broken-pod.yaml
+pod/image-demo created
+
+$ kubectl get pod image-demo
+NAME         READY   STATUS             RESTARTS   AGE
+image-demo   0/1     ImagePullBackOff   0          30s
+
+$ kubectl describe pod image-demo | sed -n '/Events:/,$p'
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  30s                default-scheduler  Successfully assigned s14/image-demo to minikube
+  Normal   BackOff    24s                kubelet            spec.containers{app}: Back-off pulling image "nginx:this-image-does-not-exist"
+  Warning  Failed     24s                kubelet            spec.containers{app}: Error: ImagePullBackOff
+  Normal   Pulling    13s (x2 over 28s)  kubelet            spec.containers{app}: Pulling image "nginx:this-image-does-not-exist"
+  Warning  Failed     11s (x2 over 25s)  kubelet            spec.containers{app}: Failed to pull image "nginx:this-image-does-not-exist": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/nginx:this-image-does-not-exist": failed to resolve reference "docker.io/library/nginx:this-image-does-not-exist": docker.io/library/nginx:this-image-does-not-exist: not found
+  Warning  Failed     11s (x2 over 25s)  kubelet            spec.containers{app}: Error: ErrImagePull
+
+# ROOT CAUSE: tag 'this-image-does-not-exist' is not in the registry. ErrImagePull is the first failure, ImagePullBackOff is the retry delay.
+
+$ kubectl delete pod image-demo --wait
+pod "image-demo" deleted from s14 namespace
+
+$ kubectl apply -f 07-imagepullbackoff/fixed-pod.yaml
+pod/image-demo created
+
+$ kubectl wait --for=condition=Ready pod/image-demo --timeout=90s
+pod/image-demo condition met
+
+$ kubectl get pod image-demo
+NAME         READY   STATUS    RESTARTS   AGE
+image-demo   1/1     Running   0          3s
+

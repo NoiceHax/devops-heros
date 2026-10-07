@@ -1,0 +1,43 @@
+=== Session 13 / Module 01: emptyDir ===
+minty@homelab, minikube v1.39.0, captured 2026-10-07 21:04 IST
+
+$ kubectl apply -f 01-volumes/emptydir-pod.yaml
+pod/emptydir-demo created
+
+$ kubectl wait --for=condition=Ready pod/emptydir-demo --timeout=90s
+pod/emptydir-demo condition met
+
+$ kubectl exec emptydir-demo -- sh -c 'echo hello-from-emptydir > /data/note.txt; cat /data/note.txt'
+hello-from-emptydir
+
+$ kubectl exec emptydir-demo -- pkill nginx
+error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "0714142e946eaa7541b2a65320c13858ef328a6aa5e34738095b4962a3f2fbb5": OCI runtime exec failed: exec failed: unable to start container process: exec: "pkill": executable file not found in $PATH
+
+$ kubectl get pod emptydir-demo
+NAME            READY   STATUS    RESTARTS   AGE
+emptydir-demo   1/1     Running   0          99s
+
+$ kubectl exec emptydir-demo -- cat /data/note.txt
+hello-from-emptydir
+
+# container restarted, file survived (emptyDir lives as long as the Pod)
+
+$ kubectl delete pod emptydir-demo --wait
+pod "emptydir-demo" deleted from s13 namespace
+
+$ kubectl apply -f 01-volumes/emptydir-pod.yaml
+pod/emptydir-demo created
+
+$ kubectl wait --for=condition=Ready pod/emptydir-demo --timeout=90s
+pod/emptydir-demo condition met
+
+$ kubectl exec emptydir-demo -- ls -la /data
+total 8
+drwxrwxrwx 2 root root 4096 Oct  7 15:35 .
+drwxr-xr-x 1 root root 4096 Oct  7 15:35 ..
+
+# new Pod => empty directory: data is gone
+
+$ kubectl delete pod emptydir-demo --wait=false
+pod "emptydir-demo" deleted from s13 namespace
+

@@ -1,0 +1,18 @@
+$ kubectl get pods,svc -n kube-system -l k8s-app=kube-dns
+pod/coredns-559f6c778d-nzd6m   1/1   Running   0     8m11s
+service/kube-dns   ClusterIP   10.96.0.10   <none>   53/UDP,53/TCP,9153/
+
+$ kubectl exec curl-client -- cat /etc/resolv.conf
+search default.svc.cluster.local svc.cluster.local cluster.local tail3ed
+nameserver 10.96.0.10
+options ndots:5
+
+# short name works in the same namespace via the search list
+$ kubectl exec curl-client -- nslookup web-service-clusterip
+Name:	web-service-clusterip.default.svc.cluster.local
+Address: 10.108.113.250
+
+# the full FQDN form: <svc>.<namespace>.svc.cluster.local
+$ kubectl exec curl-client -- nslookup web-service-clusterip.default.svc.cluster.local
+Name:	web-service-clusterip.default.svc.cluster.local
+Address: 10.108.113.250

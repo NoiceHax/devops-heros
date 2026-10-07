@@ -1,0 +1,57 @@
+=== Session 13 / Module 02: PersistentVolume + PersistentVolumeClaim ===
+minty@homelab, minikube v1.39.0, captured 2026-10-07 21:06 IST
+
+$ kubectl apply -f 02-persistent-storage/pv.yaml
+persistentvolume/student-pv created
+
+$ kubectl apply -f 02-persistent-storage/pvc-static.yaml
+persistentvolumeclaim/student-pvc created
+
+$ kubectl get pv,pvc
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                                      STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/pvc-873badf4-42a8-40ee-8dc8-7cbac2eb26d1   5Gi        RWO            Delete           Bound       default/mysql-persistent-storage-mysql-0   standard       <unset>                          19d
+persistentvolume/pvc-881312c1-4bf2-4743-b401-efe7a1fa4d9c   5Gi        RWO            Delete           Bound       default/mysql-persistent-storage-mysql-2   standard       <unset>                          19d
+persistentvolume/pvc-c4e33adf-87e6-4736-9a9c-1f1b4772a237   500Mi      RWO            Delete           Bound       default/dynamic-pvc                        standard       <unset>                          18d
+persistentvolume/pvc-d97eb019-6ca1-4c2c-b2ed-79ec458f73d5   5Gi        RWO            Delete           Bound       default/mysql-persistent-storage-mysql-1   standard       <unset>                          19d
+persistentvolume/student-pv                                 1Gi        RWO            Retain           Available   s13/student-pvc                                           <unset>                          2s
+
+NAME                                STATUS    VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/student-pvc   Pending   student-pv   0                                        <unset>                 3s
+
+$ kubectl apply -f 02-persistent-storage/pod.yaml
+pod/storage-demo created
+
+$ kubectl wait --for=condition=Ready pod/storage-demo --timeout=90s
+pod/storage-demo condition met
+
+$ kubectl exec storage-demo -- sh -c 'echo persisted > /data/file.txt'
+
+$ kubectl delete pod storage-demo --wait
+pod "storage-demo" deleted from s13 namespace
+
+$ kubectl apply -f 02-persistent-storage/pod.yaml
+pod/storage-demo created
+
+$ kubectl wait --for=condition=Ready pod/storage-demo --timeout=90s
+pod/storage-demo condition met
+
+$ kubectl exec storage-demo -- cat /data/file.txt
+persisted
+
+# data outlived the Pod because the PVC is bound to a PV
+
+$ kubectl delete pod storage-demo --wait
+pod "storage-demo" deleted from s13 namespace
+
+$ kubectl delete pvc student-pvc
+persistentvolumeclaim "student-pvc" deleted from s13 namespace
+
+$ kubectl get pv student-pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS     CLAIM             STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+student-pv   1Gi        RWO            Retain           Released   s13/student-pvc                  <unset>                          22s
+
+# reclaimPolicy: Retain -> PV is Released, not deleted
+
+$ kubectl delete pv student-pv
+persistentvolume "student-pv" deleted
+
