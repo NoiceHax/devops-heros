@@ -1,0 +1,118 @@
+name: Final CI Pipeline
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  test:
+    name: Test Application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Display Python version
+        run: python --version
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests
+        run: |
+          pytest -v
+  build:
+    name: Build Application
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build application
+        run: |
+          chmod +x build.sh
+          ./build.sh
+      - name: Show build output
+        run: |
+          cat build/build-info.txt
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculator-build
+          path: build/
+  security-check:
+    name: Security Check
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+      - name: Check for sensitive files
+        run: |
+          echo "Checking repository for common sensitive files..."
+          if find . -type f \( \
+            -name ".env" \
+            -o -name "*.pem" \
+            -o -name "*.key" \
+          \) | grep -q .; then
+            echo "Potential sensitive file found."
+            exit 1
+          else
+            echo "No common sensitive files found."
+          fi
+
+  docker:
+    name: Build and Push Docker Image
+    needs: [build, security-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/calculator
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+      - name: Build image
+        run: docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+      - name: Smoke test the image
+        run: |
+          echo "10 + 5" | docker run --rm -i "$IMAGE:latest" | grep "Result: 15.0"
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Push image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: docker push --all-tags "$IMAGE"
+
+  deploy:
+    name: Deploy (CD)
+    needs: docker
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/calculator
+    steps:
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Pull the image that was just built
+        run: docker pull "$IMAGE:${{ github.sha }}"
+      - name: Deploy (simulated)
+        run: |
+          echo "Deploying $IMAGE:${{ github.sha }} to production..."
+          echo "5 * 5" | docker run --rm -i "$IMAGE:${{ github.sha }}" | grep "Result: 25.0"
+          echo "Deployment verified."

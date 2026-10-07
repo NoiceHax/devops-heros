@@ -1,0 +1,31 @@
+name: Hello GitHub Actions
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'feature/*'
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print message
+        run: echo "Hello from GitHub Actions!"
+      - name: Show date
+        run: date
+      - name: Show operating system
+        run: uname -a
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest tests/ -v
