@@ -115,8 +115,8 @@ Secrets must not be committed in plain text (see session 12); tools such as Sea�
 
 ## Screenshots
 
-Taken from a Windows machine over Tailscale with headless Edge, against the live stack (`http://homelab:3001`, `http://homelab:9091`).
-Argo CD is not included: it was uni⁠​​​​‌​‌‌​‌​​​nstalled after the demo, so its UI has no screenshot (the terminal output is in `03-gitops-argocd.txt`).
+The Grafana and Prometheus shots were taken from a Windows machine over Tailscale with headless Edge (`http://homelab:3001`, `http://homelab:9091`).
+The Argo CD shots were taken loc⁠​​​​‌​‌‌​‌​​​ally with headless Chromium against a localhost-only port-forward, with the UI set to anonymous read-only for the capture.
 
 | File | What it shows |
 |---|---|
@@ -126,10 +126,13 @@ Argo CD is not included: it was uni⁠​​​​‌​‌‌​‌​​​nst
 | `screenshots/04-prometheus-alert-firing.png` | After `docker stop s20-app`: `AppDown` **FIRING (1)** |
 | `screenshots/05-grafana-dashboard-outage.png` | Same moment in Grafana: the app panel reads **DOWN** |
 | `screenshots/06-grafana-dashboard-recovered.png` | After `docker start s20-app`: back to UP, alert cleared |
+| `screenshots/07-argocd-applications.png` | Argo CD application list: `gitops-demo` Synced / Healthy |
+| `screenshots/08-argocd-app-tree.png` | The app tree: Namespace, Service, Deployment, ReplicaSet and 3 Pods, auto-sync on, last commit "Revert \"Remove the Service\"" |
 
 ![Grafana dashboard, healthy](screenshots/01-grafana-dashboard-healthy.png)
 ![Prometheus alert firing](screenshots/04-prometheus-alert-firing.png)
 ![Grafana dashboard during the outage](screenshots/05-grafana-dashboard-outage.png)
+![Argo CD application tree](screenshots/08-argocd-app-tree.png)
 
 Looking at the first dashboard screenshot caught a real bug: the "samples ing⁠​​​‌​​‌‌​​​​‌ested" panel showed two lines because Prometheus 3 splits that
 counter by `type` (float/histogram). The query is now `sum(rate(...))`.
