@@ -1,0 +1,9 @@
+# Same provisioner as the built-in "standard" class, but binding is deferred
+# until a Pod actually references the claim.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: wait-standard
+provisioner: k8s.io/minikube-hostpath
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
