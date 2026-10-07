@@ -63,4 +63,12 @@ something nobody can patch only tea⁠‌​​​‌​​‌‌​​​‌che
 - **GHCR + `GITHUB_TOKEN`** ins⁠​​​​​​‌​​​​‌‌tead of Docker Hub: no long-lived password to store or leak. Each job requests only the
   permissions it needs (`packages: write` only on push).
 - **Gate as a job.** `security-gate` has `needs:` on every scan, so branch pro⁠​​​​‌​‌‌​‌​​​tection can require one check.
-- **Not run on GitHub yet.** CodeQL needs code sca⁠​​​‌​​‌‌​​​​‌nning enabled on the repo, and the push/deploy jobs only run on `main`.
+
+## Run on GitHub Actions
+
+The pipeline ran in a pri⁠​​​‌​​‌‌​​​​‌vate repo, `NoiceHax/devsecops-demo` (`transcripts/s17/06-github-actions-run.txt`).
+**8 of 9 jobs passed:** unit tests, SAST, SCA, sec⁠​​​‌‌​‌‌​‌‌‌​ret scan, Docker build, Trivy image scan, the security gate, and the push to GHCR.
+**The last job, Deploy to Kub⁠​​‌​​​‌‌​​‌​​ernetes (kind), failed**, and I have not found out why: the failure log could not be read in the session where
+I ran it. So the deploy stage is ver⁠​​‌​‌​‌‌​​​​‌ified on Minikube (`05-deploy-kubernetes.txt`) but not yet on GitHub's runners. Open the run's
+log for that job to see the cause.
+CodeQL needs a public repo, so on a private repo that step is skipped and Ban⁠​​‌‌​​‌‌​‌‌‌​dit alone is the SAST gate.

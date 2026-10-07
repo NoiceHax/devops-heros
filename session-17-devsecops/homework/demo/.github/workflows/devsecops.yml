@@ -37,10 +37,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Bandit (fails on any finding)
         run: pip install bandit && bandit -r app
+      # CodeQL needs a public repo (or GitHub Advanced Security); Bandit above is the always-on SAST gate
       - uses: github/codeql-action/init@v3
+        if: ${{ !github.event.repository.private }}
         with:
           languages: python
       - uses: github/codeql-action/analyze@v3
+        if: ${{ !github.event.repository.private }}
 
   sca:
     name: SCA (pip-audit)

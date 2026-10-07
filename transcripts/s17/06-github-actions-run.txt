@@ -1,0 +1,17 @@
+=== Session 17 / DevSecOps pipeline on GitHub Actions (NoiceHax/devsecops-demo, private repo) ===
+captured 2026-10-07 23:41 IST, run 37664207982 (commit 7805adb)
+
+$ gh run view 37664207982 --json jobs   # job / conclusion
+  Build and Unit Test: success
+  SAST (CodeQL + Bandit): success
+  SCA (pip-audit): success
+  Secret Scan (gitleaks): success
+  Docker Build: success
+  Image Scan (Trivy): success
+  Security Gate: success
+  Push Image to GHCR: success
+  Deploy to Kubernetes (kind): failure
+
+# 8 of 9 jobs passed: every scan, the gate and the image push. The deploy job (kind cluster inside the runner) failed.
+# I did NOT read its log: the log fetch was blocked in this session, so the root cause is unknown.
+# CodeQL is skipped on private repos (`if: !github.event.repository.private`); Bandit is the SAST gate there.
