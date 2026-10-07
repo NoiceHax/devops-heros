@@ -1,0 +1,164 @@
+name: DevSecOps Pipeline
+
+# Code -> Build/Test -> SAST -> SCA -> Secret scan -> Docker build -> Image scan
+#      -> Security gate -> Push image -> Deploy to Kubernetes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: session17-devsecops
+
+jobs:
+  test:
+    name: Build and Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: pytest --cov=app --cov-report=term-missing
+
+  sast:
+    name: SAST (CodeQL + Bandit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bandit (fails on any finding)
+        run: pip install bandit && bandit -r app
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: python
+      - uses: github/codeql-action/analyze@v3
+
+  sca:
+    name: SCA (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - name: Audit pinned dependencies
+        run: pip-audit -r requirements.txt
+
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # scan full history, not just the tip
+      - name: Run gitleaks
+        run: |
+          docker run --rm -v "$PWD":/repo zricethezav/gitleaks:latest \
+            detect --source /repo --redact --no-banner
+
+  docker-build:
+    name: Docker Build
+    needs: [test, sast, sca, secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t "$IMAGE_NAME:${{ github.sha }}" .
+      - name: Save image for later jobs
+        run: docker save "$IMAGE_NAME:${{ github.sha }}" -o image.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image
+          path: image.tar
+          retention-days: 1
+
+  image-scan:
+    name: Image Scan (Trivy)
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: image
+      - run: docker load -i image.tar
+      - name: Scan, fail on fixable HIGH/CRITICAL
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            "$IMAGE_NAME:${{ github.sha }}"
+
+  security-gate:
+    name: Security Gate
+    needs: [sast, sca, secret-scan, image-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All security checks passed
+        run: |
+          echo "SAST        : passed"
+          echo "SCA         : passed"
+          echo "Secret scan : passed"
+          echo "Image scan  : passed"
+          echo "Gate open: image may be published."
+
+  push:
+    name: Push Image to GHCR
+    needs: security-gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: image
+      - run: docker load -i image.tar
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Tag and push the exact image that was scanned
+        run: |
+          REPO="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME"
+          docker tag "$IMAGE_NAME:${{ github.sha }}" "$REPO:${{ github.sha }}"
+          docker tag "$IMAGE_NAME:${{ github.sha }}" "$REPO:latest"
+          docker push --all-tags "$REPO"
+
+  deploy:
+    name: Deploy to Kubernetes (kind)
+    needs: push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1.10.0
+      - name: Pull the scanned image and load it into the cluster
+        run: |
+          REPO="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$REPO:${{ github.sha }}"
+          kind load docker-image "$REPO:${{ github.sha }}"
+      - name: Render manifest with the image tag
+        run: |
+          REPO="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME"
+          sed -i "s|__IMAGE__|$REPO|; s|__IMAGE_TAG__|${{ github.sha }}|" k8s/deployment.yaml
+      - run: kubectl apply -f k8s/
+      - run: kubectl rollout status deployment/session17-python --timeout=120s
+      - name: Smoke test
+        run: |
+          kubectl port-forward service/session17-python 5001:80 &
+          sleep 3
+          curl -sf http://localhost:5001/health
+          curl -sf http://localhost:5001/api/status
