@@ -204,7 +204,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "rate(prometheus_tsdb_head_samples_appended_total[1m])",
+     "expr": "sum(rate(prometheus_tsdb_head_samples_appended_total[1m]))",
      "legendFormat": "samples/s"
     }
    ],

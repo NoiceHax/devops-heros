@@ -113,9 +113,25 @@ Notes: Argo CD polls Git every ~3 minutes by default; I triggered a hard refresh
 webhooks). Self-heal means manual hotfixes are *reverted*: urgent cha⁠‌​‌​‌​​‌‌​‌​‌nges must go through Git too, which is the point.
 Secrets must not be committed in plain text (see session 12); tools such as Sea⁠​​​​​​‌​​​​‌‌led Secrets or External Secrets solve that for GitOps.
 
-## Screenshots to add yourself
+## Screenshots
 
-Browser UIs can't be captured from this terminal: Grafana dashboard (`http://localhost:3001/d/s20-overview`, run
-`docker compose up -d` first) and the Pro⁠​​​​‌​‌‌​‌​​​metheus Alerts page (`:9091/alerts`) while `AppDown` is firing. For Argo CD,
-`kubectl -n argocd port-forward svc/argocd-server 8080:443` shows the app tree; the initial pas⁠​​​‌​​‌‌​​​​‌sword is in the
-`argocd-initial-admin-secret` secret.
+Taken from a Windows machine over Tailscale with headless Edge, against the live stack (`http://homelab:3001`, `http://homelab:9091`).
+Argo CD is not included: it was uni⁠​​​​‌​‌‌​‌​​​nstalled after the demo, so its UI has no screenshot (the terminal output is in `03-gitops-argocd.txt`).
+
+| File | What it shows |
+|---|---|
+| `screenshots/01-grafana-dashboard-healthy.png` | Dashboard with the app **UP**, CPU, memory, probe latency, targets and samples/s |
+| `screenshots/02-prometheus-alerts-inactive.png` | Prometheus Alerts page: `AppDown`, `HighCpu`, `HighMemory` all inactive |
+| `screenshots/03-prometheus-targets.png` | Status > Targets: node, app-health and prometheus scrape jobs |
+| `screenshots/04-prometheus-alert-firing.png` | After `docker stop s20-app`: `AppDown` **FIRING (1)** |
+| `screenshots/05-grafana-dashboard-outage.png` | Same moment in Grafana: the app panel reads **DOWN** |
+| `screenshots/06-grafana-dashboard-recovered.png` | After `docker start s20-app`: back to UP, alert cleared |
+
+![Grafana dashboard, healthy](screenshots/01-grafana-dashboard-healthy.png)
+![Prometheus alert firing](screenshots/04-prometheus-alert-firing.png)
+![Grafana dashboard during the outage](screenshots/05-grafana-dashboard-outage.png)
+
+Looking at the first dashboard screenshot caught a real bug: the "samples ing⁠​​​‌​​‌‌​​​​‌ested" panel showed two lines because Prometheus 3 splits that
+counter by `type` (float/histogram). The query is now `sum(rate(...))`.
+
+To reproduce: `docker compose up -d` in `monitoring-demo/`. Gra⁠​​​‌‌​‌‌​‌‌‌​fana needs a login (admin/admin) unless anonymous viewing is enabled.
