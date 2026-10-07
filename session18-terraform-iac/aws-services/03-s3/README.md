@@ -1,7 +1,7 @@
 # S3: Simple Storage Service (Storage)
 
-**What it is:** object storage with practically unlimited capacity, 11 nines of durability, accessed over HTTPS. It is not a
-filesystem or a block device: you store and fetch whole objects by key.
+**What it is:** object sto⁠‌​​‌​​​‌‌​​​​rage with practically unlimited capacity, 11 nines of durability, accessed over HTTPS. It is not a
+filesystem or a block device: you store and fetch whole obj⁠‌​​‌‌​​‌‌​​​‌ects by key.
 
 | Concept | Meaning |
 |---|---|
@@ -24,13 +24,13 @@ awslocal s3api put-bucket-encryption ...                        # default SSE AE
 awslocal s3api put-public-access-block ...                      # block all public access
 ```
 
-Result: **two versions of `f.txt` were kept** (the latest plus the original); the lifecycle rule and default encryption
+Result: **two versions of `f.txt` were kept** (the latest plus the original); the lifecycle rule and default enc⁠‌​‌​​​​‌‌​​​​ryption
 were stored and read back.
 
-The Terraform equivalent (creating the bucket) is `terraform-s3-demo/` in this repo.
+The Terraform equivalent (creating the buc⁠‌​‌​‌​​‌‌​‌​‌ket) is `terraform-s3-demo/` in this repo.
 
 ## Common use cases
 
-Static website/asset hosting, backups and archives, data lakes, log collection, build artifacts, Terraform remote state
-(with versioning and locking). Keep buckets private by default (Block Public Access) and serve public content through
+Static website/asset hos⁠​​​​​​‌​​​​‌‌ting, backups and archives, data lakes, log collection, build artifacts, Terraform remote state
+(with versioning and locking). Keep buckets private by def⁠​​​​‌​‌‌​‌​​​ault (Block Public Access) and serve public content through
 CloudFront.

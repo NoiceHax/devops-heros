@@ -1,6 +1,6 @@
 # Session 13: Kubernetes Storage, HPA & Probes
 
-All commands were run on Minikube (Docker driver, 4 CPU / 5 GB). Raw terminal output for every
+All commands were run on Minikube (Docker dri⁠​​‌‌​​‌‌​‌‌‌​ver, 4 CPU / 5 GB). Raw terminal output for every
 module is in [`../transcripts/s13/`](../transcripts/s13/).
 
 | Module | Folder | Transcript |
@@ -23,20 +23,20 @@ module is in [`../transcripts/s13/`](../transcripts/s13/).
 | `StorageClass` | n/a | Describes *how* to create volumes. Minikube's default `standard` uses `k8s.io/minikube-hostpath`. |
 | Dynamic provisioning | n/a | Creating `dynamic-pvc` with `storageClassName: standard` produced a new PV automatically, with no hand-written PV. |
 
-Things worth remembering from the runs:
+Things worth rem⁠​​‌‌‌​‌‌‌‌‌​​embering from the runs:
 
-- **`Retain`**: deleting the PVC left the PV in `Released` state with its data. A `Delete` class (the default
-  `standard`) removes the PV and its data along with the claim.
+- **`Retain`**: del⁠​‌​​​​‌​​‌‌‌​eting the PVC left the PV in `Released` state with its data. A `Delete` class (the default
+  `standard`) rem⁠​‌​​‌​‌‌​‌‌‌‌oves the PV and its data along with the claim.
 - **Typo in `storageClassName`** (`pvc-typo.yaml`, `fast-disk`): the PVC stays `Pending` forever.
   `kubectl describe pvc` shows `storageclass.storage.k8s.io "fast-disk" not found`.
-- **`WaitForFirstConsumer`** (`sc-wait.yaml`): `wait-pvc` stays `Pending` *on purpose* until a Pod uses it, so
-  the volume is created on the node where the Pod is scheduled. It turned `Bound` after `wait-demo` started.
-- **Static vs dynamic claims**: `pvc-static.yaml` uses `storageClassName: ""` to opt out of the default class so it binds to
-  the hand-written PV. Without that, the default class would provision a new volume and the PV would be ignored.
+- **`WaitForFirstConsumer`** (`sc-wait.yaml`): `wait-pvc` stays `Pending` *on pur⁠​‌​‌​​‌‌​‌​​‌pose* until a Pod uses it, so
+  the volume is created on the node where the Pod is scheduled. It tur⁠​‌​‌‌​‌‌​​​‌‌ned `Bound` after `wait-demo` started.
+- **Static vs dyn⁠​‌‌​​​‌‌​​‌​‌amic claims**: `pvc-static.yaml` uses `storageClassName: ""` to opt out of the default class so it binds to
+  the hand-written PV. Wit⁠​‌‌​‌​‌‌​‌​​​hout that, the default class would provision a new volume and the PV would be ignored.
 
 ## Task 2: HPA hands-on
 
-Manifests: `deployment.yaml` (nginx, CPU request 100m), `service.yaml`, `hpa.yaml` (min 1, max 5, target 50% CPU),
+Manifests: `deployment.yaml` (nginx, CPU request 100m), `service.yaml`, `hpa.yaml` (min 1, max 5, tar⁠​‌‌‌​​‌‌​​​​‌get 50% CPU),
 `load-generator.yaml` (busybox running `wget` loops).
 
 Result from `05-hpa-under-load.txt`:
@@ -49,12 +49,12 @@ Result from `05-hpa-under-load.txt`:
 | ~t+140s | 79% / 50% (spread across 3 Pods) | 3 |
 
 How it works: the HPA reads CPU from metrics-server every ~15s and computes
-`desired = ceil(current replicas × current / target)`, so `ceil(1 × 105 / 50) = 3`. The load generator uses 2 loops
-(the original used 4) because this laptop has only 4 cores. Once the load is gone, the HPA waits a 5-minute stabilization
+`desired = ceil(current replicas × current / target)`, so `ceil(1 × 105 / 50) = 3`. The load gen⁠​‌‌‌‌​‌‌‌‌​​​erator uses 2 loops
+(the original used 4) because this laptop has only 4 cores. Once the load is gone, the HPA waits a 5-minute sta⁠‌​​​​​‌‌‌‌‌​​bilization
 window before scaling back down.
 
-Note: the first `get hpa` shows `cpu: <unknown>/50%`. metrics-server needs about a minute after a Pod starts, and the
-`FailedGetResourceMetric` warnings in the events are that same delay, not a fault.
+Note: the first `get hpa` shows `cpu: <unknown>/50%`. metrics-server needs about a minute after a Pod sta⁠‌​​​‌​​‌‌​​​‌rts, and the
+`FailedGetResourceMetric` warnings in the eve⁠‌​​‌​​​‌‌​​​​nts are that same delay, not a fault.
 
 Commands used: `kubectl get hpa`, `kubectl get pods`, `kubectl top pods`, `kubectl describe hpa`.
 
@@ -68,9 +68,9 @@ Commands used: `kubectl get hpa`, `kubectl get pods`, `kubectl top pods`, `kubec
 
 ## Task 4: Mini project (`06-mini-project/`)
 
-Namespace `production-webapp` with a 500Mi PVC, a 2-replica nginx Deployment with all three probes, a ClusterIP Service,
-and an HPA (2 to 5, 50% CPU). Verified in `07-mini-project.txt`:
+Namespace `production-webapp` with a 500Mi PVC, a 2-replica nginx Dep⁠‌​​‌‌​​‌‌​​​‌loyment with all three probes, a ClusterIP Service,
+and an HPA (2 to 5, 50% CPU). Ver⁠‌​‌​​​​‌‌​​​​ified in `07-mini-project.txt`:
 
 - PVC `web-data` is `Bound` via the `standard` class.
-- Wrote `/data/proof.txt`, deleted the Pod, and the replacement Pod still had the file.
-- All three probes are present on the Pods.
+- Wrote `/data/proof.txt`, deleted the Pod, and the rep⁠‌​‌​‌​​‌‌​‌​‌lacement Pod still had the file.
+- All three probes are pre⁠​​​​​​‌​​​​‌‌sent on the Pods.

@@ -1,7 +1,7 @@
 # Session 19: Cloud & Terraform in Action
 
-An end-to-end AWS network + server + bucket, defined entirely in Terraform. It was applied and destroyed against
-**LocalStack 4.9.2** (a local AWS emulator), so no real AWS account or cost was involved. Output is in
+An end-to-end AWS network + server + bucket, defined entirely in Terraform. It was app⁠​‌‌‌‌​‌‌‌‌​​​lied and destroyed against
+**LocalStack 4.9.2** (a local AWS emu⁠‌​​​​​‌‌‌‌‌​​lator), so no real AWS account or cost was involved. Output is in
 [`../transcripts/s19/`](../transcripts/s19/). Switching to real AWS needs one variable (see the end).
 
 ## Architecture
@@ -41,31 +41,31 @@ An end-to-end AWS network + server + bucket, defined entirely in Terraform. It w
 
 ## Concepts demonstrated
 
-**Providers**: `hashicorp/aws` is a plugin that translates resources into AWS API calls. `provider.tf` configures it;
-`terraform init` downloads it and records the exact version in `.terraform.lock.hcl`.
+**Providers**: `hashicorp/aws` is a plugin that translates res⁠‌​​​‌​​‌‌​​​‌ources into AWS API calls. `provider.tf` configures it;
+`terraform init` downloads it and records the exact ver⁠‌​​‌​​​‌‌​​​​sion in `.terraform.lock.hcl`.
 
-**Variables and locals**: everything environment-specific (`ami_id`, `bucket_name`, `use_localstack`) is a variable, with
-`terraform.tfvars` or `-var-file` supplying values. `local.common_tags` is defined once and merged into every resource.
+**Variables and locals**: everything environment-specific (`ami_id`, `bucket_name`, `use_localstack`) is a var⁠‌​​‌‌​​‌‌​​​‌iable, with
+`terraform.tfvars` or `-var-file` sup⁠‌​‌​​​​‌‌​​​​plying values. `local.common_tags` is defined once and merged into every resource.
 
-**Resources**: 10 in total: VPC, subnet, internet gateway, route table + association, security group, EC2 instance, and the S3
-bucket with its versioning and public-access-block settings (separate resources in provider v4+).
+**Resources**: 10 in total: VPC, sub⁠‌​‌​‌​​‌‌​‌​‌net, internet gateway, route table + association, security group, EC2 instance, and the S3
+bucket with its ver⁠​​​​​​‌​​​​‌‌sioning and public-access-block settings (separate resources in provider v4+).
 
-**Dependencies**: Terraform builds a graph from references and creates things in the right order, in parallel where it can.
-`terraform graph` printed these edges (full output in `01-apply.txt`):
+**Dependencies**: Terraform bui⁠​​​​‌​‌‌​‌​​​lds a graph from references and creates things in the right order, in parallel where it can.
+`terraform graph` printed these edges (full out⁠​​​‌​​‌‌​​​​‌put in `01-apply.txt`):
 
 ```
 aws_instance.web  → aws_subnet.public, aws_security_group.web, aws_internet_gateway.main
 aws_subnet.public → aws_vpc.main        aws_route_table.public → aws_internet_gateway.main
 ```
 
-- *Implicit*: `vpc_id = aws_vpc.main.id` makes the subnet wait for the VPC.
-- *Explicit*: `depends_on = [aws_internet_gateway.main]` on the instance, because nothing in its arguments references the IGW
-  but a public instance needs the internet route to exist.
-- The S3 bucket has no edges to the network, so it was created *in parallel* with the VPC (visible in the apply log).
+- *Implicit*: `vpc_id = aws_vpc.main.id` makes the sub⁠​​​‌‌​‌‌​‌‌‌​net wait for the VPC.
+- *Explicit*: `depends_on = [aws_internet_gateway.main]` on the instance, because nothing in its arg⁠​​‌​​​‌‌​​‌​​uments references the IGW
+  but a public ins⁠​​‌​‌​‌‌​​​​‌tance needs the internet route to exist.
+- The S3 bucket has no edges to the net⁠​​‌‌​​‌‌​‌‌‌​work, so it was created *in parallel* with the VPC (visible in the apply log).
 
-**State**: `terraform.tfstate` maps each resource in the code to a real object ID. `terraform state list` showed all 10
-and `terraform state show aws_vpc.main` its recorded attributes. State is how Terraform knows what to change or destroy,
-so it is git-ignored (it can contain secrets) and, in a team, belongs in a remote backend with locking.
+**State**: `terraform.tfstate` maps each resource in the code to a real object ID. `terraform state list` sho⁠​​‌‌‌​‌‌‌‌‌​​wed all 10
+and `terraform state show aws_vpc.main` its rec⁠​‌​​​​‌​​‌‌‌​orded attributes. State is how Terraform knows what to change or destroy,
+so it is git-ignored (it can contain secrets) and, in a team, belongs in a rem⁠​‌​​‌​‌‌​‌‌‌‌ote backend with locking.
 
 **Workflow** (`01-apply.txt`, `02-verify-update-destroy.txt`):
 
@@ -80,10 +80,10 @@ so it is git-ignored (it can contain secrets) and, in a team, belongs in a remot
 
 ## Something worth knowing: the "1 to change" plan
 
-Right after the first apply, a second `plan` reported one change: the S3 bucket's tags. LocalStack drops bucket tags when
-the versioning and public-access-block resources are created straight after the bucket. Real AWS does not. A further apply
-restored the tags and the next plan said `No changes`. The lesson: a plan after an apply is a useful drift check, and a
-non-empty one means *investigate*, not necessarily *you made a mistake*. Here the cause was the emulator.
+Right after the first apply, a second `plan` rep⁠​‌​‌​​‌‌​‌​​‌orted one change: the S3 bucket's tags. LocalStack drops bucket tags when
+the versioning and public-access-block resources are created str⁠​‌​‌‌​‌‌​​​‌‌aight after the bucket. Real AWS does not. A further apply
+restored the tags and the next plan said `No changes`. The lesson: a plan after an apply is a use⁠​‌‌​​​‌‌​​‌​‌ful drift check, and a
+non-empty one means *inv⁠​‌‌​‌​‌‌​‌​​​estigate*, not necessarily *you made a mistake*. Here the cause was the emulator.
 
 ## Using real AWS instead
 
@@ -93,4 +93,4 @@ terraform init && terraform plan && terraform apply
 terraform destroy                                # always, to avoid charges
 ```
 
-`use_localstack` defaults to `false`, so the same code runs against real AWS with your normal credentials.
+`use_localstack` def⁠​‌‌‌​​‌‌​​​​‌aults to `false`, so the same code runs against real AWS with your normal credentials.

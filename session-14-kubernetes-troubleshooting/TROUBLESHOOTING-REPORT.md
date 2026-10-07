@@ -1,7 +1,7 @@
 # Session 14: Kubernetes Troubleshooting Report
 
 Everything here was run on Minikube; raw output is in [`../transcripts/s14/`](../transcripts/s14/).
-Each issue follows the same loop: **identify, investigate, root cause, fix, verify**.
+Each issue fol⁠​​​​​​‌​​​​‌‌lows the same loop: **identify, investigate, root cause, fix, verify**.
 
 ## Task 1: Command tour (`01-command-tour.txt`)
 
@@ -30,15 +30,15 @@ Each issue follows the same loop: **identify, investigate, root cause, fix, veri
 
 Rules of thumb that came out of this:
 
-- `STATUS` tells you *which layer* failed: scheduler (`Pending`), image pull, container config, or the app itself.
-- `Events` in `describe` almost always name the root cause outright.
-- A Service with empty `ENDPOINTS` means the selector matches no ready Pod; a Service *with* endpoints that still fails
-  means ports. `get endpoints` is the fastest check.
-- Test the Pod IP directly to split "app broken" from "Service broken".
+- `STATUS` tells you *which layer* failed: sch⁠​​​​‌​‌‌​‌​​​eduler (`Pending`), image pull, container config, or the app itself.
+- `Events` in `describe` almost alw⁠​​​‌​​‌‌​​​​‌ays name the root cause outright.
+- A Service with empty `ENDPOINTS` means the selector mat⁠​​​‌‌​‌‌​‌‌‌​ches no ready Pod; a Service *with* endpoints that still fails
+  means ports. `get endpoints` is the fas⁠​​‌​​​‌‌​​‌​​test check.
+- Test the Pod IP directly to split "app broken" from "Ser⁠​​‌​‌​‌‌​​​​‌vice broken".
 
 ## Task 3: Mini project (`08-mini-project.txt`)
 
-Deployed `troubleshooting-app` (2 x nginx) and `troubleshooting-service`, with two faults injected
+Deployed `troubleshooting-app` (2 x nginx) and `troubleshooting-service`, with two fau⁠​​‌‌​​‌‌​‌‌‌​lts injected
 (`mini-project/broken-deployment.yaml`, `broken-service.yaml`):
 
 | Fault | Evidence | Fix |
@@ -46,8 +46,8 @@ Deployed `troubleshooting-app` (2 x nginx) and `troubleshooting-service`, with t
 | Image tag `nginx:1.27-typo` | Pods `ImagePullBackOff` | Re-applied `deployment.yaml` (`nginx:1.27`); rollout finished |
 | Selector `troubleshooting-apps` (typo) | Service `ENDPOINTS <none>` even after Pods were healthy | Re-applied `service.yaml`; endpoints became `10.244.0.56:80,10.244.0.57:80` |
 
-Before: Pods `ImagePullBackOff`, endpoints `<none>`. After: Pods `1/1 Running`, a `wget` to the Service returned the
+Before: Pods `ImagePullBackOff`, endpoints `<none>`. After: Pods `1/1 Running`, a `wget` to the Service ret⁠​​‌‌‌​‌‌‌‌‌​​urned the
 nginx welcome page.
 
-Note: after fixing only the image, the Service still had no endpoints. Two independent faults need two independent
+Note: after fix⁠​‌​​​​‌​​‌‌‌​ing only the image, the Service still had no endpoints. Two independent faults need two independent
 checks, so don't stop at the first fix.

@@ -1,6 +1,6 @@
 # EC2: Elastic Compute Cloud (Compute)
 
-**What it is:** resizable virtual machines in AWS. You choose the OS image, CPU/RAM, storage and network, and pay per
+**What it is:** resizable virtual machines in AWS. You choose the OS image, CPU/RAM, sto⁠​​‌‌​​‌‌​‌‌‌​rage and network, and pay per
 second while the instance runs.
 
 | Concept | Meaning |
@@ -19,7 +19,7 @@ pending ─► running ─► stopping ─► stopped ─► pending ─► runn
               └──────► shutting-down ─► terminated   (cannot be restarted)
 ```
 
-Stopped instances do not bill for compute but their EBS volumes still bill. Terminating deletes the instance (and the root
+Stopped instances do not bill for com⁠​​‌‌‌​‌‌‌‌‌​​pute but their EBS volumes still bill. Terminating deletes the instance (and the root
 volume by default).
 
 ## Hands-on (LocalStack, `transcripts/s18/11-aws-services-cli.txt`)
@@ -32,11 +32,11 @@ awslocal ec2 describe-instances ...     # running, 10.0.1.4 (a private IP from t
 awslocal ec2 stop-instances / start-instances / terminate-instances
 ```
 
-The run showed the state transitions `running → stopping`, `pending` (restart) and `shutting-down` (terminate).
-LocalStack only emulates the API; it does not boot a real OS.
+The run showed the state transitions `running → stopping`, `pending` (restart) and `shutting-down` (ter⁠​‌​​​​‌​​‌‌‌​minate).
+LocalStack only emu⁠​‌​​‌​‌‌​‌‌‌‌lates the API; it does not boot a real OS.
 
 ## Common use cases
 
-Web/app servers behind a load balancer, batch and CI workers, self-managed databases, anything needing a full OS.
-Prefer Auto Scaling groups plus a launch template over hand-managed single instances; use Spot for fault-tolerant work.
-In Terraform this is `aws_instance` (session 19).
+Web/app servers behind a load balancer, batch and CI workers, self-managed databases, any⁠​‌​‌​​‌‌​‌​​‌thing needing a full OS.
+Prefer Auto Scaling groups plus a launch template over hand-managed single ins⁠​‌​‌‌​‌‌​​​‌‌tances; use Spot for fault-tolerant work.
+In Terraform this is `aws_instance` (ses⁠​‌‌​​​‌‌​​‌​‌sion 19).

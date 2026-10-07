@@ -1,7 +1,7 @@
 # VPC: Virtual Private Cloud (Networking)
 
-**What it is:** your own logically isolated network inside AWS. You pick the IP range, split it into subnets, and control
-routing and firewalls. EC2, RDS, load balancers etc. all live inside a VPC.
+**What it is:** your own logically isolated network ins⁠​‌‌​​​‌‌​​‌​‌ide AWS. You pick the IP range, split it into subnets, and control
+routing and firewalls. EC2, RDS, load balancers etc. all live ins⁠​‌‌​‌​‌‌​‌​​​ide a VPC.
 
 | Concept | Meaning |
 |---|---|
@@ -15,8 +15,8 @@ routing and firewalls. EC2, RDS, load balancers etc. all live inside a VPC.
 
 ## Public vs private subnet
 
-A subnet is **public** if its route table has `0.0.0.0/0 → Internet Gateway` (and instances have public IPs). It is **private**
-if not; private subnets reach the internet, if at all, via `0.0.0.0/0 → NAT Gateway`.
+A subnet is **pub⁠​‌‌‌​​‌‌​​​​‌lic** if its route table has `0.0.0.0/0 → Internet Gateway` (and instances have public IPs). It is **private**
+if not; private subnets reach the int⁠​‌‌‌‌​‌‌‌‌​​​ernet, if at all, via `0.0.0.0/0 → NAT Gateway`.
 
 ```
 Internet ── IGW ── public subnet (10.0.1.0/24):  web/ALB, NAT GW
@@ -26,13 +26,13 @@ Internet ── IGW ── public subnet (10.0.1.0/24):  web/ALB, NAT GW
 
 ## Hands-on (LocalStack, `transcripts/s18/11-aws-services-cli.txt`)
 
-Created a `10.0.0.0/16` VPC, a public (`10.0.1.0/24`, AZ a) and a private (`10.0.2.0/24`, AZ b) subnet, an Internet Gateway,
-a route table with `0.0.0.0/0 → igw-…` associated **only** with the public subnet, and a security group allowing TCP 443.
-`describe-route-tables` printed `10.0.0.0/16 local` and `0.0.0.0/0 igw-…`: that default route is what makes the subnet public.
+Created a `10.0.0.0/16` VPC, a pub⁠‌​​​​​‌‌‌‌‌​​lic (`10.0.1.0/24`, AZ a) and a private (`10.0.2.0/24`, AZ b) subnet, an Internet Gateway,
+a route table with `0.0.0.0/0 → igw-…` associated **only** with the public subnet, and a sec⁠‌​​​‌​​‌‌​​​‌urity group allowing TCP 443.
+`describe-route-tables` printed `10.0.0.0/16 local` and `0.0.0.0/0 igw-…`: that default route is what makes the sub⁠‌​​‌​​​‌‌​​​​net public.
 
-The same network built in Terraform is session 19.
+The same network built in Terraform is ses⁠‌​​‌‌​​‌‌​​​‌sion 19.
 
 ## Good practice
 
-Databases and app servers in private subnets; only load balancers and bastions in public ones; spread subnets over at
-least two AZs; use security groups as the main control and NACLs as a coarse extra layer.
+Databases and app servers in private subnets; only load balancers and bas⁠‌​‌​​​​‌‌​​​​tions in public ones; spread subnets over at
+least two AZs; use security groups as the main con⁠‌​‌​‌​​‌‌​‌​‌trol and NACLs as a coarse extra layer.

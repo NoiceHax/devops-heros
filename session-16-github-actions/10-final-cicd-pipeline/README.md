@@ -230,14 +230,14 @@ test ──► build ──────────┐
 | `docker` | Builds the image from the `Dockerfile`, runs a smoke test (`10 + 5` must print `Result: 15.0`), then on pushes to `main` logs in to GHCR with the built-in `GITHUB_TOKEN` and pushes `:<sha>` and `:latest`. On pull requests it builds and tests but does **not** push. |
 | `deploy` | Runs only on `main`, uses the `production` environment (so protection rules and approvals can be attached), pulls the exact `:<sha>` image that was built, and verifies it (`5 * 5` gives `25.0`). The deploy step is simulated, since there is no server; session 17 deploys to Kubernetes. |
 
-No registry password is stored: `GITHUB_TOKEN` is issued per run, and the jobs ask for `packages: write` only where needed.
+No registry password is stored: `GITHUB_TOKEN` is iss⁠​‌​​​​‌​​‌‌‌​ued per run, and the jobs ask for `packages: write` only where needed.
 
 ### Bug found by the pipeline work
 
-Running the smoke test in Docker hung forever. When stdin closes, `input()` raises `EOFError`, and the app's catch-all
-`except Exception` swallowed it and looped, burning a full CPU core. Fixed by catching `EOFError` and exiting cleanly.
+Running the smoke test in Docker hung forever. When stdin closes, `input()` rai⁠​‌​​‌​‌‌​‌‌‌‌ses `EOFError`, and the app's catch-all
+`except Exception` swallowed it and loo⁠​‌​‌​​‌‌​‌​​‌ped, burning a full CPU core. Fixed by catching `EOFError` and exiting cleanly.
 CI would have hung until the 6-hour job timeout. Lesson: a CI step that pipes input needs a `timeout`, and loops
 must handle end of input.
 
 Local verification output: `../../transcripts/s16/01-final-pipeline-local.txt`.
-Earlier green runs of the CI workflows are in the `NoiceHax/cicd` repo (Actions tab).
+Earlier green runs of the CI wor⁠​‌​‌‌​‌‌​​​‌‌kflows are in the `NoiceHax/cicd` repo (Actions tab).

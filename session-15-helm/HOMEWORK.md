@@ -25,8 +25,8 @@ session-15-helm/
 | `helm rollback demo 1` | Re-deploy an old revision **as a new revision** | History shows revision 3, "Rollback to 1" |
 | `helm uninstall` | Remove the release and its resources | `helm list` is empty |
 
-Key idea: a *chart* is the package, a *release* is one installed instance of it, and every change creates a new
-numbered *revision* that can be rolled back to.
+Key idea: a *chart* is the package, a *rel⁠​‌‌‌​​‌‌​​​​‌ease* is one installed instance of it, and every change creates a new
+numbered *revision* that can be rol⁠​‌‌‌‌​‌‌‌‌​​​led back to.
 
 ## Task 2: Rollback workflow (`02-rollback-workflow.txt`)
 
@@ -40,17 +40,17 @@ numbered *revision* that can be rolled back to.
 | Rollback | `helm rollback notes 2` | rev 4 "Rollback to 2" |
 | Verify | `kubectl get pods`, `get deploy` | 3 healthy Pods, `nginx:1.25`, the broken Pod is gone |
 
-Note that `helm history` shows rev 4 (a *new* revision whose content equals rev 2), not a rewind to rev 2. Helm
-never deletes revision history on rollback.
+Note that `helm history` shows rev 4 (a *new* rev⁠‌​​​​​‌‌‌‌‌​​ision whose content equals rev 2), not a rewind to rev 2. Helm
+never deletes revision his⁠‌​​​‌​​‌‌​​​‌tory on rollback.
 
 ## Task 3: Mini project, notes-chart (`03-mini-project.txt`)
 
-A chart for a Notes app (nginx) with a Deployment, a NodePort Service and a ConfigMap, all driven by values.
+A chart for a Notes app (nginx) with a Deployment, a NodePort Ser⁠‌​​‌​​​‌‌​​​​vice and a ConfigMap, all driven by values.
 
-- `values.yaml` is development (1 replica, `nginx:1.24`); `values-prod.yaml` is production (3 replicas, `nginx:1.25`).
-- `{{ .Release.Name }}` prefixes every resource name, so the same chart can be installed multiple times.
-- The Deployment carries a `checksum/config` annotation computed from the ConfigMap, so changing the ConfigMap
-  rolls the Pods. Without it, Pods would keep the old env vars after an upgrade.
+- `values.yaml` is development (1 replica, `nginx:1.24`); `values-prod.yaml` is pro⁠‌​​‌‌​​‌‌​​​‌duction (3 replicas, `nginx:1.25`).
+- `{{ .Release.Name }}` prefixes every resource name, so the same chart can be installed mul⁠‌​‌​​​​‌‌​​​​tiple times.
+- The Deployment carries a `checksum/config` annotation computed from the Con⁠‌​‌​‌​​‌‌​‌​‌figMap, so changing the ConfigMap
+  rolls the Pods. Wit⁠​​​​​​‌​​​​‌‌hout it, Pods would keep the old env vars after an upgrade.
 - `helm lint` passed, `helm template` rendered cleanly, and `curl http://<minikube-ip>:30090` returned the nginx page.
-- Upgrading the same release with `-f values-prod.yaml` moved it to 3 replicas and changed `ENVIRONMENT` in the
+- Upgrading the same release with `-f values-prod.yaml` moved it to 3 replicas and cha⁠​​​​‌​‌‌​‌​​​nged `ENVIRONMENT` in the
   ConfigMap to `production`.
