@@ -1,0 +1,45 @@
+# Monitoring demo: metrics + health probes + alerts + dashboard.
+# Ports are 9091 / 3001 / 8081 so it can run beside any other Prometheus/Grafana on 9090 / 3000.
+services:
+  app:
+    image: nginx:1.27-alpine           # the "application" whose health we monitor
+    container_name: s20-app
+    ports: ["8081:80"]
+    mem_limit: 64m
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1   # host CPU / memory / disk metrics
+    container_name: s20-node-exporter
+    pid: host
+    volumes: ["/:/host:ro,rslave"]
+    command: ["--path.rootfs=/host"]
+    mem_limit: 64m
+
+  blackbox:
+    image: prom/blackbox-exporter:v0.27.0   # probes endpoints from outside = "is the app healthy?"
+    container_name: s20-blackbox
+    volumes: ["./blackbox.yml:/etc/blackbox_exporter/config.yml:ro"]
+    mem_limit: 64m
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: s20-prometheus
+    ports: ["9091:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+    mem_limit: 256m
+    depends_on: [node-exporter, blackbox, app]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: s20-grafana
+    ports: ["3001:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    mem_limit: 256m
+    depends_on: [prometheus]
